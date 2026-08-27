@@ -1,0 +1,179 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Quản Lý Đơn Đặt Sân - SportHub
+    script(src="https://cdn.tailwindcss.com")
+    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css")
+  
+  body(class="bg-gray-50 font-sans")
+
+    //- Nhúng Header chung của bạn vào đây (nếu có)
+    //- include header.pug
+
+    main(class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8")
+      //- Tiêu đề trang
+      div(class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4")
+        div
+          h1(class="text-2xl font-black text-gray-900 tracking-tight") Quản Lý Đơn Đặt Sân
+          p(class="text-sm text-gray-500 mt-1") Theo dõi và duyệt các yêu cầu đặt sân từ khách hàng.
+
+        //- Bộ lọc tab trạng thái
+        div(class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm")
+          button(onclick="filterBookings('all')" id="tab-all" class="px-4 py-2 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm") Tất cả
+          button(onclick="filterBookings('pending')" id="tab-pending" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Chờ duyệt
+          button(onclick="filterBookings('confirmed')" id="tab-confirmed" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã xác nhận
+          button(onclick="filterBookings('cancelled')" id="tab-cancelled" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã hủy
+
+      //- Bảng danh sách đơn đặt sân
+      div(class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden")
+        div(class="overflow-x-auto")
+          table(class="w-full text-left border-collapse")
+            thead(class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-bold")
+              <tr>
+                <th class="py-4 px-6">Khách hàng</th>
+                <th class="py-4 px-6">Tên sân</th>
+                <th class="py-4 px-6">Thời gian đá / thuê</th>
+                <th class="py-4 px-6">Tổng tiền</th>
+                <th class="py-4 px-6">Trạng thái</th>
+                <th class="py-4 px-6 text-center">Hành động</th>
+              </tr>
+            tbody(id="bookingsTableBody" class="divide-y divide-gray-100 text-sm")
+              //- Dữ liệu sẽ được load tự động bằng JavaScript ở dưới
+              <tr>
+                <td colspan="6" class="py-8 text-center text-gray-400">Đang tải danh sách đơn...</td>
+              </tr>
+
+    script.
+      let allBookings = [];
+      let currentFilter = 'all';
+
+      // 1. Load danh sách đơn khi trang được mở
+      document.addEventListener('DOMContentLoaded', () => {
+        fetchBookings();
+      });
+
+      async function fetchBookings() {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('/api/owner/bookings', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const result = await response.json();
+          
+          if (result.success) {
+            allBookings = result.data;
+            renderBookings(allBookings);
+          } else {
+            document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-500">${result.error || 'Không thể tải dữ liệu'}</td></tr>`;
+          }
+        } catch (error) {
+          console.error('Lỗi:', error);
+          document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-500">Lỗi kết nối máy chủ!</td></tr>`;
+        }
+      }
+
+      // 2. Render danh sách ra bảng HTML
+      function renderBookings(bookings) {
+        const tbody = document.getElementById('bookingsTableBody');
+        
+        // Lọc theo tab đang chọn
+        const filtered = bookings.filter(b => {
+          if (currentFilter === 'all') return true;
+          return b.status === currentFilter;
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-gray-400 font-medium">Không có đơn đặt sân nào.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(b => {
+          let statusBadge = '';
+          if (b.status === 'pending') {
+            statusBadge = `<span class="bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full">Chờ duyệt</span>`;
+          } else if (b.status === 'confirmed') {
+            statusBadge = `<span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-full">Đã xác nhận</span>`;
+          } else {
+            statusBadge = `<span class="bg-rose-100 text-rose-700 font-bold text-xs px-2.5 py-1 rounded-full">Đã hủy</span>`;
+          }
+
+          // Nút hành động chỉ hiện khi đơn ở trạng thái 'pending' (chờ duyệt)
+          let actions = '';
+          if (b.status === 'pending') {
+            actions = `
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="updateStatus('${b._id}', 'confirmed')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm">
+                  <i class="fas fa-check mr-1"></i> Duyệt
+                </button>
+                <button onclick="updateStatus('${b._id}', 'cancelled')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-xl font-bold text-xs transition-all">
+                  <i class="fas fa-times mr-1"></i> Từ chối
+                </button>
+              </div>
+            `;
+          } else {
+            actions = `<span class="text-xs text-gray-400 font-medium italic">Đã xử lý</span>`;
+          }
+
+          return `
+            <tr class="hover:bg-gray-50/60 transition-colors">
+              <td class="py-4 px-6 font-semibold text-gray-800">${b.customerName || b.user?.name || 'Khách hàng'}</td>
+              <td class="py-4 px-6 text-gray-600 font-medium">${b.yardName || b.yard?.name || 'Sân bóng'}</td>
+              <td class="py-4 px-6 text-gray-600 text-xs">
+                <div class="font-bold">${b.date || 'Hôm nay'}</div>
+                <div class="text-gray-400">${b.timeSlot || 'Ca chơi'}</div>
+              </td>
+              <td class="py-4 px-6 font-bold text-emerald-600">${Number(b.totalPrice || 0).toLocaleString('vi-VN')} đ</td>
+              <td class="py-4 px-6">${statusBadge}</td>
+              <td class="py-4 px-6 text-center">${actions}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 3. Hàm lọc khi bấm các tab
+      function filterBookings(status) {
+        currentFilter = status;
+        // Đổi style các nút tab
+        ['all', 'pending', 'confirmed', 'cancelled'].forEach(s => {
+          const btn = document.getElementById(`tab-${s}`);
+          if (s === status) {
+            btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm";
+          } else {
+            btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100";
+          }
+        });
+        renderBookings(allBookings);
+      }
+
+      // 4. Hàm gọi API Duyệt hoặc Từ chối đơn
+      async function updateStatus(bookingId, newStatus) {
+        const actionText = newStatus === 'confirmed' ? 'duyệt' : 'từ chối';
+        if (!confirm(`Bạn có chắc chắn muốn ${actionText} đơn đặt sân này không?`)) return;
+
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`/api/owner/bookings/${bookingId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: newStatus })
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            alert(`Đã ${actionText} đơn thành công!`);
+            fetchBookings(); // Tải lại danh sách mới
+          } else {
+            alert(result.error || 'Có lỗi xảy ra khi cập nhật trạng thái.');
+          }
+        } catch (error) {
+          console.error('Lỗi:', error);
+          alert('Không thể kết nối đến máy chủ.');
+        }
+      }

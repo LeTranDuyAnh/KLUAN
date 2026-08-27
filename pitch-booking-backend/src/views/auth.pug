@@ -1,0 +1,109 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Đăng nhập & Đăng ký - Sàn Thể Thao
+    link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet")
+  body.bg-light
+    .container.py-5
+      .row.justify-content-center
+        .col-md-6
+          .card.shadow-sm.p-4
+            .card-body
+              ul.nav.nav-pills.mb-3.justify-content-center(id="pills-tab" role="tablist")
+                li.nav-item
+                  button.nav-link.active(id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button") Đăng nhập
+                li.nav-item
+                  button.nav-link(id="pills-register-tab" data-bs-toggle="pill" data-bs-target="#pills-register" type="button") Đăng ký
+
+              .tab-content(id="pills-tabContent")
+                //- Form Đăng nhập
+                .tab-pane.fade.show.active(id="pills-login")
+                  form#loginForm
+                    .mb-3
+                      label.form-label Email
+                      input.form-control(type="email" id="loginEmail" required)
+                    .mb-3
+                      label.form-label Mật khẩu
+                      input.form-control(type="password" id="loginPassword" required)
+                    button.btn.btn-primary.w-100(type="submit") Đăng nhập
+
+                //- Form Đăng ký
+                .tab-pane.fade(id="pills-register")
+                  form#registerForm
+                    .mb-3
+                      label.form-label Họ và tên
+                      input.form-control(type="text" id="regName" required)
+                    .mb-3
+                      label.form-label Email
+                      input.form-control(type="email" id="regEmail" required)
+                    .mb-3
+                      label.form-label Mật khẩu
+                      input.form-control(type="password" id="regPassword" required)
+                    .mb-3
+                      label.form-label Số điện thoại
+                      input.form-control(type="text" id="regPhone" required)
+                    .mb-3
+                      label.form-label Bạn muốn đăng ký làm gì?
+                      select.form-select(id="regRole")
+                        option(value="customer") Khách hàng đặt sân
+                        option(value="owner") Chủ sân bóng/thể thao
+                    button.btn.btn-success.w-100(type="submit") Đăng ký tài khoản
+
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
+    script.
+      // Xử lý Đăng nhập
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Đăng nhập thành công!');
+          // Lưu token xác thực
+          localStorage.setItem('token', result.token);
+          
+          // BỔ SUNG DÒNG NÀY: Lưu object user vào localStorage để trang admin nhận diện quyền
+          localStorage.setItem('user', JSON.stringify(result.user)); 
+
+         if (result.user.role === 'admin') {
+          window.location.href = '/admin';
+        } else if (result.user.role === 'owner') {
+          window.location.href = '/owner'; // Thêm luồng chuyển hướng riêng cho chủ sân
+        } else {
+          window.location.href = '/';
+        }
+        } else {
+          alert(result.error);
+        }
+      });
+
+      // Xử lý Đăng ký
+      document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const phone = document.getElementById('regPhone').value;
+        const role = document.getElementById('regRole').value;
+
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, phone, role })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Đăng ký thành công! Hãy chuyển sang tab Đăng nhập.');
+          document.getElementById('registerForm').reset();
+        } else {
+          alert(result.error);
+        }
+      });

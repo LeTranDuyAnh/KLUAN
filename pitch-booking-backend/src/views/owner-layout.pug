@@ -1,0 +1,152 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title #{title || 'Quản lý Sân - Chủ Sân Thể Thao'}
+    link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet")
+    link(href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet")
+    style.
+      body {
+        background-color: #f8f9fa;
+        overflow-x: hidden;
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 260px;
+        background-color: #198754;
+        color: white;
+        z-index: 1000;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar .brand {
+        padding: 20px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+      }
+      .sidebar .menu {
+        list-style: none;
+        padding: 15px 10px;
+        margin: 0;
+        flex-grow: 1;
+      }
+      .sidebar .menu li {
+        margin-bottom: 5px;
+      }
+      .sidebar .menu a {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+      }
+      .sidebar .menu a:hover, .sidebar .menu a.active {
+        color: #fff;
+        background-color: rgba(255,255,255,0.15);
+      }
+      .sidebar .menu a i {
+        width: 25px;
+        font-size: 1.1rem;
+      }
+      .sidebar .footer-menu {
+        padding: 15px;
+        border-top: 1px solid rgba(255,255,255,0.15);
+      }
+      .main-content {
+        margin-left: 260px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .top-navbar {
+        background: white;
+        height: 70px;
+        padding: 0 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      @media (max-width: 768px) {
+        .sidebar { width: 70px; }
+        .sidebar .brand span, .sidebar .menu span, .sidebar .footer-menu span { display: none; }
+        .main-content { margin-left: 70px; }
+      }
+
+  body
+    // --- SIDEBAR CỐ ĐỊNH ---
+    .sidebar
+      .brand
+        i.fas.fa-store.me-2.fa-lg
+        span Sàn Thể Thao
+      ul.menu
+        li
+          a(href="/owner" class=(activePage === 'yards' ? 'active' : ''))
+            i.fas.fa-futbol
+            span Quản lý Sân
+        li
+          a(href="/owner/bookings" class=(activePage === 'bookings' ? 'active' : ''))
+            i.fas.fa-clipboard-check
+            span Duyệt đơn đặt sân
+        li
+          a(href="/owner/revenue" class=(activePage === 'revenue' ? 'active' : ''))
+            i.fas.fa-chart-line
+            span Thống kê doanh thu
+        li
+          a(href="/owner/settings" class=(activePage === 'settings' ? 'active' : ''))
+            i.fas.fa-cog
+            span Cài đặt tài khoản
+      .footer-menu
+        a.btn.btn-outline-light.w-100.btn-sm.d-flex.align-items-center.justify-content-center(href="/")
+          i.fas.fa-home.me-2
+          span Về trang chủ
+
+    // --- NỘI DUNG CHÍNH ---
+    .main-content
+      .top-navbar
+        div
+          h4.fw-bold.text-success.mb-0 #{headerTitle || 'Hệ thống Quản lý'}
+          small.text-muted #{headerSubtitle || 'Kênh dành cho chủ sân thể thao'}
+        .d-flex.align-items-center.gap-3
+          span.text-dark.fw-medium Chào, <span id="ownerName">Chủ sân</span>
+          button.btn.btn-outline-danger.btn-sm(onclick="logout()")
+            i.fas.fa-sign-out-alt.me-1
+            | Đăng xuất
+
+      // Khối nội dung sẽ được đổ từ các trang con vào đây
+      block content
+
+    // --- SCRIPT CHUNG ---
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
+    script.
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      if (!token || user.role !== 'owner') {
+        alert('Bạn cần đăng nhập bằng tài khoản Chủ sân để truy cập trang này!');
+        window.location.href = '/auth';
+      }
+
+      if(user.name || user.username) {
+        document.getElementById('ownerName').innerText = user.name || user.username;
+      }
+
+      function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/auth';
+      }
+
+    // Các script riêng của từng trang con (nếu có)
+    block scripts

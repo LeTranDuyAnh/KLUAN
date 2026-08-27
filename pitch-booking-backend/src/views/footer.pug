@@ -1,0 +1,104 @@
+//- footer.pug
+footer(class="bg-gray-900 text-gray-300 pt-16 pb-8 border-t border-gray-800 font-sans")
+  div(class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")
+    
+    //- Phần lưới thông tin chính (5 cột)
+    div(class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12")
+      
+      //- Cột 1: Thông tin thương hiệu (chiếm 2 cột trên màn hình lớn)
+      div(class="lg:col-span-2 space-y-4")
+        div(class="flex items-center gap-3")
+          div(class="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30")
+            i(class="fas fa-futbol text-xl")
+          div(class="flex flex-col")
+            span(class="font-black text-xl tracking-wider text-white uppercase") Sport#[span(class="text-emerald-500") Hub]
+            span(class="text-[10px] font-semibold text-gray-400 tracking-widest uppercase -mt-1") Arena Booking
+            
+        p(class="text-gray-400 text-sm leading-relaxed pr-6")
+          | Nền tảng kết nối người chơi với hệ thống sân thể thao chất lượng cao (Bóng đá, Bóng rổ, Tennis, Pickleball, Cầu lông). Đặt sân nhanh chóng, minh bạch và nhiều ưu đãi hấp dẫn mỗi ngày.
+
+        //- Mạng xã hội
+        div(class="flex items-center space-x-3 pt-2")
+          a(href="#" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-emerald-600 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-300")
+            i(class="fab fa-facebook-f")
+          a(href="#" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-emerald-600 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-300")
+            i(class="fab fa-tiktok")
+          a(href="#" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-emerald-600 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-300")
+            i(class="fab fa-instagram")
+          a(href="#" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-emerald-600 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-300")
+            i(class="fab fa-youtube")
+
+      //- Cột 2: Các môn thể thao
+      div(class="space-y-4")
+        h3(class="text-white font-bold text-base tracking-wide uppercase border-l-4 border-emerald-500 pl-3") Môn Thể Thao
+        ul(class="space-y-2.5 text-sm")
+          li
+            a(href="/booking?sport=football" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Sân bóng đá
+          li
+            a(href="/booking?sport=basketball" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Sân bóng rổ
+          li
+            a(href="/booking?sport=tennis" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Sân tennis
+          li
+            a(href="/booking?sport=pickleball" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Sân Pickleball
+          li
+            a(href="/booking?sport=badminton" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Sân cầu lông
+
+      //- Cột 3: Liên kết nhanh
+      div(class="space-y-4")
+        h3(class="text-white font-bold text-base tracking-wide uppercase border-l-4 border-emerald-500 pl-3") Khám Phá
+        ul(class="space-y-2.5 text-sm")
+          li
+            a(href="/" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Trang chủ
+          li
+            a(href="/booking" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Tìm kiếm & Đặt sân
+          li
+            a(href="/vouchers" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Kho voucher ưu đãi
+          li
+            a(href="/about" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Về chúng tôi
+          li
+            a(href="/map" class="text-gray-300 hover:text-emerald-400 transition-colors flex items-center gap-2.5 no-underline") 
+              i(class="fas fa-chevron-right text-emerald-500 text-[10px]") 
+              span Bản đồ sân thể thao
+
+      //- Cột 4: Thông tin liên hệ
+      div(class="space-y-4")
+        h3(class="text-white font-bold text-base tracking-wide uppercase border-l-4 border-emerald-500 pl-3") Liên Hệ
+        ul(class="space-y-3 text-sm text-gray-400")
+          li(class="flex items-start gap-3")
+            i(class="fas fa-map-marker-alt text-emerald-500 mt-1 flex-shrink-0")
+            span Trâu Quỳ, Gia Lâm, Hà Nội
+          li(class="flex items-center gap-3")
+            i(class="fas fa-phone-alt text-emerald-500 flex-shrink-0")
+            span +84 123 456 789
+          li(class="flex items-center gap-3")
+            i(class="fas fa-envelope text-emerald-500 flex-shrink-0")
+            span support@sporthub.vn
+          li(class="flex items-center gap-3")
+            i(class="fas fa-clock text-emerald-500 flex-shrink-0")
+            span 06:00 - 23:00 (T2 - CN)
+
+    //- Đường kẻ ngang phân cách
+    div(class="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row items-center justify-between text-xs text-gray-500")
+      p © 2026 #[span(class="text-emerald-400 font-semibold") SportHub]. All rights reserved. Phát triển bởi Đội ngũ K67CNTTA.
+      div(class="flex space-x-6 mt-4 md:mt-0")
+        a(href="#" class="text-gray-500 hover:text-gray-300 transition-colors no-underline") Chính sách bảo mật
+        a(href="#" class="text-gray-500 hover:text-gray-300 transition-colors no-underline") Điều khoản sử dụng
+        a(href="#" class="text-gray-500 hover:text-gray-300 transition-colors no-underline") Quy chế hoạt động

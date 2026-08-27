@@ -1,0 +1,176 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Trang chủ - Sàn Đặt Sân Thể Thao
+    //- Tailwind CSS CDN
+    script(src="https://cdn.tailwindcss.com")
+    //- Bootstrap 5 CSS CDN
+    link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet")
+    //- FontAwesome Icons
+    link(href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet")
+  body.bg-gray-50 
+
+    //- 1. Header & Banner Slider
+    include header
+
+    //- Include file mixin khung card dùng chung vào trang chủ
+    include yard-card
+
+    //- 2. THANH TÌM KIẾM & BỘ LỌC NÂNG CAO
+    section(class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 mb-12")
+      div(class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100")
+        form(action="/booking" method="GET" class="space-y-4")
+          div(class="grid grid-cols-1 md:grid-cols-3 gap-4")
+            
+            //- Ô tìm kiếm tên sân / khu vực
+            div(class="relative")
+              label(class="block text-xs font-bold text-gray-500 uppercase mb-1") Tìm kiếm sân
+              div(class="relative flex items-center")
+                i(class="fas fa-search absolute left-3.5 text-gray-400")
+                input(type="text" name="keyword" placeholder="Nhập tên sân, khu vực, địa điểm..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all")
+
+            //- Lọc theo loại sân
+            div(class="relative")
+              label(class="block text-xs font-bold text-gray-500 uppercase mb-1") Loại môn thể thao
+              select(name="sport" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all cursor-pointer")
+                option(value="") Tất cả các môn
+                option(value="football") Bóng đá
+                option(value="basketball") Bóng rổ
+                option(value="tennis") Tennis
+                option(value="pickleball") Pickleball
+                option(value="badminton") Cầu lông
+
+            //- Nút tìm kiếm
+            div(class="flex items-end")
+              button(type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2")
+                i(class="fas fa-filter")
+                | Tìm Sân Ngay
+
+          //- Bộ lọc nhanh dạng các nút Tag
+          div(class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100 mt-4")
+            span(class="text-xs font-bold text-gray-400 uppercase mr-2") Lọc nhanh:
+            a(href="/booking" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") Tất cả
+            a(href="/booking?sport=football" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") ⚽ Bóng đá
+            a(href="/booking?sport=basketball" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") 🏀 Bóng rổ
+            a(href="/booking?sport=tennis" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") 🎾 Tennis
+            a(href="/booking?sport=pickleball" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") 🏓 Pickleball
+            a(href="/booking?sport=badminton" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-emerald-600 hover:text-white transition-all no-underline") 🏸 Cầu lông
+
+    //- 3. PHẦN HIỂN THỊ DANH SÁCH SÂN TỪ DATABASE (Render bằng JavaScript sử dụng khung chuẩn)
+    section(class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20")
+      div(class="flex justify-between items-end mb-6")
+        div
+          span(class="text-emerald-600 font-bold text-xs uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full") Dữ liệu trực tuyến
+          h2(class="text-2xl sm:text-3xl font-black text-gray-900 mt-2") Danh Sách Sân Từ Hệ Thống
+        a(href="/booking" class="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 no-underline")
+          | Xem tất cả &rarr;
+
+      //- Container chứa danh sách sân
+      div#databaseYardsList(class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6")
+        div(class="col-span-full text-center py-12 text-gray-400")
+          i(class="fas fa-spinner fa-spin text-2xl text-emerald-600 mb-2")
+          p(class="text-sm") Đang tải danh sách sân từ cơ sở dữ liệu...
+
+    //- 4. PHẦN HÀNH ĐỘNG DƯỚI CÙNG
+    section(class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16")
+      div(class="container text-center py-5 bg-gradient-to-tr from-emerald-900 to-teal-800 rounded-3xl shadow-xl text-white p-8 sm:p-12")
+        .card.shadow-sm.p-5.mx-auto.border-0.rounded-2xl.bg-transparent(style="max-width: 600px;")
+          .card-body
+            .w-16.h-16.bg-white
+              i(class="fas fa-futbol text-3xl")
+            h2.fw-bold.mb-3.text-white Sàn Đặt Sân Trực Tuyến
+            p.text-gray-300.mb-6 Hệ thống hỗ trợ đặt sân thể thao và thanh toán trực tuyến linh hoạt theo khung giờ.
+            
+            .d-grid.gap-2.col-10.mx-auto#actionButtons
+
+    //- 5. Footer
+    include footer
+
+    //- Bootstrap 5 JS Bundle
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js")
+    
+    script.
+      document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Xử lý nút bấm xác thực ở giữa trang
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const actionButtons = document.getElementById('actionButtons');
+
+        if (token && user && user.role) {
+          if (user.role === 'admin') {
+            actionButtons.innerHTML = `<a href="/admin" class="btn btn-light btn-lg rounded-xl py-3 fw-semibold shadow-sm text-decoration-none text-emerald-900"><i class="fas fa-user-shield me-2"></i> Truy cập Trang Quản Trị (Admin)</a>`;
+          } else if (user.role === 'owner') {
+            actionButtons.innerHTML = `<a href="/owner" class="btn btn-warning btn-lg rounded-xl py-3 fw-semibold shadow-sm text-dark text-decoration-none"><i class="fas fa-store me-2"></i> Quản lý sân của tôi</a>`;
+          } else {
+            actionButtons.innerHTML = `<a href="/booking" class="btn btn-success btn-lg rounded-xl py-3 fw-semibold shadow-sm text-decoration-none bg-emerald-500 hover:bg-emerald-600 border-0"><i class="fas fa-search me-2"></i> Tìm và Đặt Sân Ngay</a>`;
+          }
+        } else {
+          actionButtons.innerHTML = `<a href="/auth?mode=login" class="btn btn-success btn-lg rounded-xl py-3 fw-semibold shadow-sm text-decoration-none bg-emerald-500 hover:bg-emerald-600 border-0"><i class="fas fa-sign-in-alt me-2"></i> Đăng nhập / Đăng ký ngay</a>`;
+        }
+
+        // 2. Gọi API lấy danh sách sân từ Database (MongoDB)
+        const container = document.getElementById('databaseYardsList');
+        try {
+          const response = await fetch('/api/yards'); 
+          const data = await response.json();
+          const yards = Array.isArray(data) ? data : (data.yards || data.data || []);
+
+          if (yards.length === 0) {
+            container.innerHTML = `
+              <div class="col-span-full text-center py-12 text-gray-500">
+                <i class="fas fa-box-open text-3xl mb-2 text-gray-300"></i>
+                <p>Chưa có sân nào được cập nhật trong cơ sở dữ liệu.</p>
+              </div>`;
+            return;
+          }
+
+          // Render danh sách sân sử dụng chuẩn khung cố định
+          // Render danh sách sân có đủ: Ảnh, Loại, Tên, Địa chỉ, Giá sáng/tối và 2 nút bấm
+          container.innerHTML = yards.map(yard => `
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300 flex flex-col justify-between h-full group">
+              <div>
+                <div class="relative h-44 overflow-hidden rounded-xl mb-3 bg-gray-100">
+                  <img src="${yard.image || yard.imageUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=500&auto=format&fit=crop'}" alt="${yard.name || 'Sân thể thao'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                  <span class="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase shadow-md">${yard.type || yard.sportType || yard.sport || 'Thể thao'}</span>
+                </div>
+                <h4 class="font-bold text-sm text-gray-900 mb-1 line-clamp-1 group-hover:text-emerald-600 transition-colors" title="${yard.name}">${yard.name}</h4>
+                <p class="text-gray-500 text-[11px] mb-3 flex items-center gap-1.5 line-clamp-1" title="${yard.location || yard.address}">
+                  <i class="fas fa-map-marker-alt text-emerald-500 flex-shrink-0"></i>
+                  <span>${yard.location || yard.address || 'Đang cập nhật'}</span>
+                </p>
+              </div>
+
+              <div class="pt-3 border-t border-gray-100 mt-auto">
+                <div class="grid grid-cols-2 gap-2 mb-3 bg-gray-50 p-2 rounded-xl text-center">
+                  <div>
+                    <span class="block text-[9px] text-gray-400 font-bold uppercase">Sáng</span>
+                    <span class="text-emerald-600 font-black text-xs">${yard.priceMorning ? yard.priceMorning.toLocaleString() + 'đ' : 'Liên hệ'}</span>
+                  </div>
+                  <div class="border-l border-gray-200">
+                    <span class="block text-[9px] text-gray-400 font-bold uppercase">Tối</span>
+                    <span class="text-amber-600 font-black text-xs">${yard.priceEvening ? yard.priceEvening.toLocaleString() + 'đ' : 'Liên hệ'}</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5">
+                  <a href="/booking/${yard._id || yard.id}" class="py-2 px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] rounded-xl transition-all no-underline text-center flex items-center justify-center gap-1">
+                    <i class="fas fa-eye text-[10px]"></i> Chi tiết
+                  </a>
+                  <a href="/booking/${yard._id || yard.id}" class="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl transition-all no-underline text-center shadow-sm flex items-center justify-center gap-1">
+                    <i class="fas fa-calendar-check text-[10px]"></i> Đặt sân
+                  </a>
+                </div>
+              </div>
+            </div>
+          `).join('');
+
+        } catch (error) {
+          console.error('Lỗi khi tải dữ liệu sân:', error);
+          container.innerHTML = `
+            <div class="col-span-full text-center py-8 text-red-500 text-xs">
+              <i class="fas fa-exclamation-triangle mr-1"></i> Không thể kết nối tới cơ sở dữ liệu để tải danh sách sân.
+            </div>`;
+        }
+      });

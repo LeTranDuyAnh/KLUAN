@@ -1,0 +1,422 @@
+extends owner-layout
+
+block content
+  .container.py-4
+    .row.mb-4
+      .col-md-7
+        p.text-muted Quản lý đa môn thể thao: Bóng đá, Bóng rổ, Tennis, Pickleball...
+      .col-md-5.text-end.d-flex.align-items-center.justify-content-end.gap-2
+        //- Bộ lọc theo môn thể thao
+        select.form-select.form-select-sm(id="filterCategory" onchange="filterYards()" style="width: 170px;")
+          option(value="all") Tất cả môn thể thao
+          option(value="Bóng đá") Bóng đá
+          option(value="Bóng rổ") Bóng rổ
+          option(value="Tennis") Tennis
+          option(value="Pickleball") Pickleball
+          option(value="Cầu lông") Cầu lông
+        
+        button.btn.btn-success.text-nowrap(data-bs-toggle="modal" data-bs-target="#yardModal" onclick="resetForm()")
+          i.fas.fa-plus.me-2
+          | Thêm sân mới
+
+    //- Bảng danh sách sân
+    .card.shadow-sm
+      .card-body
+        .table-responsive
+          table.table.table-hover.align-middle
+            thead.table-success
+              tr
+                th Ảnh
+                th Tên sân
+                th Môn / Thể loại
+                th Địa điểm
+                th Giá Sáng (VNĐ/h)
+                th Giá Tối (VNĐ/h)
+                th Trạng thái
+                th.text-center Thao tác
+            tbody#yardTableBody
+              //- Render bằng JS
+
+  //- Modal Thêm / Sửa sân
+  .modal.fade#yardModal(tabindex="-1")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title#modalTitle Thêm sân mới
+          button.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form#yardForm
+            input(type="hidden" id="yardId")
+            .mb-3
+              label.form-label Tên sân
+              input.form-control(type="text" id="name" required placeholder="Ví dụ: Sân bóng số 1, Sân Pickleball A...")
+            
+            .mb-3
+              label.form-label Môn thể thao
+              select.form-select(id="category" required onchange="handleCategoryChange()")
+                option(value="" disabled selected) -- Chọn môn thể thao --
+                option(value="Bóng đá") Bóng đá
+                option(value="Bóng rổ") Bóng rổ
+                option(value="Tennis") Tennis
+                option(value="Pickleball") Pickleball
+                option(value="Cầu lông") Cầu lông
+
+            //- Phân loại chi tiết (chỉ hiện khi chọn Bóng đá)
+            .mb-3#subTypeContainer(style="display: none;")
+              label.form-label Quy mô sân bóng đá
+              select.form-select(id="subType")
+                option(value="Sân 5") Sân 5 người
+                option(value="Sân 7") Sân 7 người
+                option(value="Sân 11") Sân 11 người
+
+            .mb-3
+              label.form-label Địa chỉ / Khu vực
+              input.form-control(type="text" id="location" required)
+            
+            .row
+              .col-md-6.mb-3
+                label.form-label 
+                  i.fas.fa-sun.text-warning.me-1
+                  | Giá Sáng (VNĐ/h)
+                input.form-control(type="number" id="priceMorning" min="0" required placeholder="Ví dụ: 200000")
+              .col-md-6.mb-3
+                label.form-label 
+                  i.fas.fa-moon.text-primary.me-1
+                  | Giá Tối (VNĐ/h)
+                input.form-control(type="number" id="priceEvening" min="0" required placeholder="Ví dụ: 350000")
+
+            .mb-3
+              label.form-label Ảnh chính của sân (1 ảnh)
+              input.form-control(type="file" id="image" accept="image/*")
+            .mb-3
+              label.form-label Ảnh phụ (Tối đa 3 ảnh)
+              input.form-control(type="file" id="subImages" accept="image/*" multiple)   
+            button.btn.btn-success.w-100(type="submit") Lưu thông tin
+
+  //- Modal Xem chi tiết sân
+  .modal.fade#detailYardModal(tabindex="-1")
+    .modal-dialog.modal-lg
+      .modal-content
+        .modal-header.bg-success.text-white
+          h5.modal-title
+            i.fas.fa-info-circle.me-2
+            | Chi tiết thông tin sân
+          button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
+        .modal-body
+          .row.mb-3
+            .col-md-6
+              p
+                strong Tên sân: 
+                span#detailName
+              p
+                strong Môn thể thao: 
+                span.badge.bg-success#detailCategory
+              p#detailSubTypeWrapper(style="display: none;")
+                strong Quy mô sân bóng: 
+                span.badge.bg-warning.text-dark#detailSubType 
+              p
+                strong Địa điểm: 
+                span#detailLocation
+            .col-md-6
+              p
+                strong Giá ca sáng: 
+                span.text-warning.fw-bold#detailPriceMorning
+              p
+                strong Giá ca tối: 
+                span.text-primary.fw-bold#detailPriceEvening
+              p
+                strong Trạng thái: 
+                span.badge.bg-primary Hoạt động
+          
+          hr
+          .mb-3
+            label.form-label.fw-bold 
+              i.fas.fa-image.me-1.text-success
+              | Ảnh đại diện (Ảnh chính):
+            div#detailMainImageContainer.mt-2
+
+          .mb-3
+            label.form-label.fw-bold 
+              i.fas.fa-images.me-1.text-success
+              | Danh sách ảnh phụ:
+            div.row#detailSubImagesContainer.mt-2
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Đóng
+
+  //- Modal Xác nhận Xóa Sân
+  .modal.fade#deleteConfirmModal(tabindex="-1")
+    .modal-dialog.modal-dialog-centered
+      .modal-content
+        .modal-header.bg-danger.text-white
+          h5.modal-title 
+            i.fas.fa-exclamation-triangle.me-2
+            | Xác nhận xóa sân
+          button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
+        .modal-body
+          p Bạn có chắc chắn muốn xóa sân này không? Hành động này không thể hoàn tác và mọi thông tin của sân sẽ bị xóa khỏi hệ thống.
+          input(type="hidden" id="deleteYardId")
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Hủy bỏ
+          button.btn.btn-danger(type="button" onclick="confirmDeleteYard()") Đồng ý xóa
+
+block scripts
+  script.
+    const API_URL = '/api/owner/yards';
+    let allYards = []; 
+
+    document.addEventListener('DOMContentLoaded', fetchYards);
+
+    async function fetchYards() {
+      try {
+        const res = await fetch(API_URL, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          allYards = result.data;
+          filterYards();
+        } else {
+          console.log(result.error || 'Chưa có dữ liệu sân.');
+        }
+      } catch (err) {
+        console.error('Lỗi tải sân:', err);
+      }
+    }
+
+    // Xử lý hiển thị ô chọn Sân 5/7/11 khi chọn môn Bóng đá
+    function handleCategoryChange() {
+      const category = document.getElementById('category').value;
+      const subTypeContainer = document.getElementById('subTypeContainer');
+      if (category === 'Bóng đá') {
+        subTypeContainer.style.display = 'block';
+      } else {
+        subTypeContainer.style.display = 'none';
+        document.getElementById('subType').value = 'Tiêu chuẩn';
+      }
+    }
+
+    // Lọc danh sách theo môn thể thao
+    function filterYards() {
+      const selectedCategory = document.getElementById('filterCategory').value;
+      let filtered = allYards;
+      if (selectedCategory !== 'all') {
+        filtered = allYards.filter(yard => yard.type === selectedCategory || (yard.category && yard.category === selectedCategory));
+      }
+      renderTable(filtered);
+    }
+
+    function renderTable(yards) {
+      const tbody = document.getElementById('yardTableBody');
+      tbody.innerHTML = '';
+      if(!yards || yards.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Không tìm thấy sân nào phù hợp.</td></tr>`;
+        return;
+      }
+      yards.forEach(yard => {
+        const imgTag = yard.image ? `<img src="${yard.image}" alt="Yard" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` : '<span class="text-muted">Không có</span>';
+        
+        const sportCategory = yard.category || yard.type || 'Bóng đá';
+        const sportSubType = (sportCategory === 'Bóng đá' && yard.subType) ? ` (${yard.subType})` : '';
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${imgTag}</td>
+            <td>${yard.name}</td>
+            <td><span class="badge bg-secondary">${sportCategory}${sportSubType}</span></td>
+            <td>${yard.location}</td>
+            <td><span class="text-warning fw-bold">${(yard.priceMorning || 0).toLocaleString()} đ</span></td>
+            <td><span class="text-primary fw-bold">${(yard.priceEvening || 0).toLocaleString()} đ</span></td>
+            <td><span class="badge bg-primary">Hoạt động</span></td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-info me-1" onclick="openDetailModal('${yard._id}')" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
+              <button class="btn btn-sm btn-outline-warning me-1" onclick="openEditModal('${yard._id}')" title="Sửa"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal('${yard._id}')" title="Xóa"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function resetForm() {
+      document.getElementById('modalTitle').innerText = 'Thêm sân mới';
+      document.getElementById('yardForm').reset();
+      document.getElementById('yardId').value = '';
+      document.getElementById('subTypeContainer').style.display = 'none';
+      document.getElementById('image').setAttribute('required', 'required');
+    }
+
+    function openDetailModal(id) {
+      const yard = allYards.find(y => y._id === id);
+      if (!yard) return;
+
+      const categoryVal = yard.category || yard.type || 'Bóng đá';
+
+      document.getElementById('detailName').innerText = yard.name;
+      document.getElementById('detailCategory').innerText = categoryVal;
+      document.getElementById('detailLocation').innerText = yard.location;
+      document.getElementById('detailPriceMorning').innerText = `${(yard.priceMorning || 0).toLocaleString()} đ`;
+      document.getElementById('detailPriceEvening').innerText = `${(yard.priceEvening || 0).toLocaleString()} đ`;
+
+      const subTypeWrapper = document.getElementById('detailSubTypeWrapper');
+      if (categoryVal === 'Bóng đá') {
+        subTypeWrapper.style.display = 'block';
+        document.getElementById('detailSubType').innerText = yard.subType || 'Sân 5';
+      } else {
+        subTypeWrapper.style.display = 'none';
+      }
+
+      const mainImgContainer = document.getElementById('detailMainImageContainer');
+      if (yard.image) {
+        mainImgContainer.innerHTML = `
+          <div class="position-relative d-inline-block">
+            <img src="${yard.image}" alt="Ảnh đại diện" class="img-thumbnail" style="width: 180px; height: 120px; object-fit: cover;">
+            <span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger">Ảnh đại diện</span>
+          </div>
+        `;
+      } else {
+        mainImgContainer.innerHTML = `<span class="text-muted">Chưa có ảnh đại diện</span>`;
+      }
+
+      const subImgContainer = document.getElementById('detailSubImagesContainer');
+      subImgContainer.innerHTML = '';
+      if (yard.subImages && yard.subImages.length > 0) {
+        yard.subImages.forEach((subImg, index) => {
+          subImgContainer.innerHTML += `
+            <div class="col-md-4 mb-2">
+              <div class="card p-1 shadow-sm">
+                <img src="${subImg}" alt="Ảnh phụ ${index + 1}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                <div class="card-body p-1 text-center">
+                  <small class="text-muted">Ảnh phụ ${index + 1}</small>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        subImgContainer.innerHTML = `<div class="col-12"><span class="text-muted">Không có ảnh phụ nào.</span></div>`;
+      }
+
+      const modal = new bootstrap.Modal(document.getElementById('detailYardModal'));
+      modal.show();
+    }
+
+    function openEditModal(id) {
+      const yard = allYards.find(y => y._id === id);
+      if (!yard) return;
+
+      document.getElementById('modalTitle').innerText = 'Chỉnh sửa thông tin sân';
+      document.getElementById('yardId').value = yard._id;
+      document.getElementById('name').value = yard.name;
+      
+      const categoryVal = yard.category || yard.type || 'Bóng đá';
+      document.getElementById('category').value = categoryVal;
+      
+      handleCategoryChange();
+      if (categoryVal === 'Bóng đá' && yard.subType) {
+        document.getElementById('subType').value = yard.subType;
+      }
+
+      document.getElementById('location').value = yard.location;
+      document.getElementById('priceMorning').value = yard.priceMorning;
+      document.getElementById('priceEvening').value = yard.priceEvening;
+      
+      document.getElementById('image').removeAttribute('required');
+
+      const modal = new bootstrap.Modal(document.getElementById('yardModal'));
+      modal.show();
+    }
+
+    function openDeleteModal(id) {
+      document.getElementById('deleteYardId').value = id;
+      const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+      deleteModal.show();
+    }
+
+    async function confirmDeleteYard() {
+      const id = document.getElementById('deleteYardId').value;
+      try {
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        
+        const modalEl = document.getElementById('deleteConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+
+        if (response.ok && result.success) {
+          alert('Đã xóa sân thành công!');
+          fetchYards();
+        } else {
+          alert(result.error || 'Không thể xóa sân!');
+        }
+      } catch (err) {
+        console.error('Lỗi:', err);
+        alert('Không thể kết nối đến máy chủ!');
+      }
+    }
+
+    document.getElementById('yardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const priceMorningVal = Number(document.getElementById('priceMorning').value);
+      const priceEveningVal = Number(document.getElementById('priceEvening').value);
+      
+      if (priceMorningVal < 0 || priceEveningVal < 0) {
+        alert('Giá thuê sân không thể là số âm!');
+        return;
+      }
+
+      const yardId = document.getElementById('yardId').value;
+      const isEditing = yardId !== '';
+
+      const categoryVal = document.getElementById('category').value;
+      const subTypeVal = categoryVal === 'Bóng đá' ? document.getElementById('subType').value : 'Tiêu chuẩn';
+
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value);
+      formData.append('category', categoryVal);
+      formData.append('type', categoryVal); 
+      formData.append('subType', subTypeVal);
+      formData.append('location', document.getElementById('location').value);
+      formData.append('priceMorning', priceMorningVal);
+      formData.append('priceEvening', priceEveningVal);
+
+      const mainImageFile = document.getElementById('image').files[0];
+      if (mainImageFile) {
+        formData.append('image', mainImageFile);
+      }
+
+      const subImageFiles = document.getElementById('subImages').files;
+      for (let i = 0; i < Math.min(subImageFiles.length, 3); i++) {
+        formData.append('subImages', subImageFiles[i]);
+      }
+
+      const url = isEditing ? `${API_URL}/${yardId}` : API_URL;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const result = await response.json();
+        if (response.ok && result.success) {
+          const modalEl = document.getElementById('yardModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+
+          document.getElementById('yardForm').reset();
+          fetchYards();
+          alert(result.message || 'Thành công!');
+        } else {
+          alert(result.error || 'Có lỗi xảy ra!');
+        }
+      } catch (err) {
+        console.error('Lỗi:', err);
+        alert('Không thể kết nối đến máy chủ!');
+      }
+    });
