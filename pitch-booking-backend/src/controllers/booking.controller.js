@@ -1,8 +1,8 @@
-const Facility = require('../models/facility.model');
+const Yard = require('../models/yard.model');
 const Booking = require('../models/booking.model');
 
-// Hàm tính tiền tự động theo khung 15:00
-function calculatePrice(startTime, endTime, morningPrice, eveningPrice) {
+// Hàm tính tiền tự động theo khung 15:00 dựa trên giá của cơ sở Yard
+function calculatePrice(startTime, endTime, priceMorning, priceEvening) {
   const startHour = parseFloat(startTime.replace(':', '.'));
   const endHour = parseFloat(endTime.replace(':', '.'));
   const splitHour = 15.00;
@@ -13,87 +13,129 @@ function calculatePrice(startTime, endTime, morningPrice, eveningPrice) {
 
   if (endHour <= splitHour) {
     morningHours = endHour - startHour;
-    totalPrice = morningHours * morningPrice;
+    totalPrice = morningHours * priceMorning;
   } else if (startHour >= splitHour) {
     eveningHours = endHour - startHour;
-    totalPrice = eveningHours * eveningPrice;
+    totalPrice = eveningHours * priceEvening;
   } else {
     morningHours = splitHour - startHour;
     eveningHours = endHour - splitHour;
-    totalPrice = (morningHours * morningPrice) + (eveningHours * eveningPrice);
+    totalPrice = (morningHours * priceMorning) + (eveningHours * priceEvening);
   }
 
-  return { morningHours, eveningHours, totalPrice };
+  return totalPrice;
 }
 
-// API Tạo đơn đặt sân
+// 1. API Tạo đơn đặt sân
 async function createBooking(req, reply) {
   try {
-    const { customerId, facilityId, subFieldId, date, timeSlot } = req.body;
-    // timeSlot = { start: "14:00", end: "17:00" }
+    const { yardId, subFieldId, date, startTime, endTime } = req.body;
+    const customerId = req.user.userId || req.user._id;
 
-    // 1. Tìm thông tin cơ sở và sân con tương ứng
-    const facility = await Facility.findById(facilityId);
-    if (!facility) {
-      return reply.code(404).send({ error: 'Không tìm thấy cơ sở sân bóng!' });
+    const yard = await Yard.findById(yardId);
+    if (!yard) {
+      return reply.code(404).send({ success: false, error: 'Không tìm thấy sân bóng!' });
     }
 
-    const subField = facility.subFields.find(sf => sf.subFieldId === subFieldId);
+    // Tìm sân con trong mảng subFields của Yard
+    const subField = yard.subFields.id(subFieldId) || yard.subFields.find(sf => sf._id.toString() === subFieldId);
     if (!subField) {
-      return reply.code(404).send({ error: 'Không tìm thấy sân con trong cơ sở này!' });
+      return reply.code(404).send({ success: false, error: 'Không tìm thấy sân con trong cơ sở này!' });
     }
 
-    // 2. Kiểm tra trùng lịch (Double Booking Check)
+    // Kiểm tra trùng lịch trên đúng sân con đó
     const existingBooking = await Booking.findOne({
-      facilityId,
-      subFieldId,
-      date: new Date(date),
-      bookingStatus: { $in: ['pending', 'confirmed'] },
+      yard: yardId,
+      subFieldId: subField._id,
+      date: date,
+      status: { $in: ['pending', 'confirmed'] },
       $or: [
-        { "timeSlot.start": { $lt: timeSlot.end }, "timeSlot.end": { $gt: timeSlot.start } }
+        { startTime: { $lt: endTime }, endTime: { $gt: startTime } }
       ]
     });
 
     if (existingBooking) {
-      return reply.code(400).send({ error: 'Khung giờ này đã có người đặt, vui lòng chọn giờ khác!' });
+      return reply.code(400).send({ success: false, error: `Sân ${subField.name} đã có người đặt trong khung giờ này, vui lòng chọn giờ khác!` });
     }
 
-    // 3. Tính toán tiền tự động theo Sáng / Tối
-    const { morningHours, eveningHours, totalPrice } = calculatePrice(
-      timeSlot.start,
-      timeSlot.end,
-      subField.pricing.morningPrice,
-      subField.pricing.eveningPrice
-    );
+    const totalPrice = calculatePrice(startTime, endTime, yard.priceMorning, yard.priceEvening);
 
-    // 4. Lưu đơn đặt sân
     const newBooking = new Booking({
-      customerId,
-      facilityId,
-      subFieldId,
-      sportCategory: facility.sportCategory,
-      date: new Date(date),
-      timeSlot,
-      pricingDetails: {
-        morningHoursBooked: morningHours,
-        eveningHoursBooked: eveningHours,
-        appliedMorningPrice: subField.pricing.morningPrice,
-        appliedEveningPrice: subField.pricing.eveningPrice
-      },
-      totalPrice
+      customer: customerId,
+      yard: yardId,
+      subFieldId: subField._id,
+      subFieldName: subField.name,
+      date,
+      startTime,
+      endTime,
+      totalPrice,
+      status: 'pending'
     });
 
     await newBooking.save();
 
     return reply.code(201).send({
-      message: 'Đặt sân thành công, vui lòng chuyển khoản thanh toán!',
+      success: true,
+      message: `Đặt ${subField.name} thành công, vui lòng chờ chủ sân duyệt!`,
       data: newBooking
     });
 
   } catch (error) {
-    console.error(error);
-    return reply.code(500).send({ error: 'Lỗi server nội bộ!' });
+    console.error('Lỗi tạo đơn:', error);
+    return reply.code(500).send({ success: false, error: 'Lỗi server nội bộ!' });
   }
 }
 
-module.exports = { createBooking };
+// 2. API Lấy danh sách đơn đặt sân cho Chủ sân
+async function getOwnerBookings(req, reply) {
+  try {
+    const ownerId = req.user.userId || req.user._id;
+    
+    const yards = await Yard.find({ owner: ownerId }).select('_id');
+    const yardIds = yards.map(y => y._id);
+
+    const bookings = await Booking.find({ yard: { $in: yardIds } })
+      .populate('yard', 'name location type')
+      .populate({
+        path: 'customer',
+        select: 'name phone email'
+      })
+      .sort({ createdAt: -1 });
+
+    return reply.send({ success: true, data: bookings });
+  } catch (error) {
+    console.error('Lỗi lấy danh sách đơn:', error);
+    return reply.code(500).send({ success: false, error: 'Lỗi server nội bộ khi lấy danh sách đơn!' });
+  }
+}
+
+// 3. API Cập nhật trạng thái đơn (Duyệt / Từ chối)
+async function updateBookingStatus(req, reply) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; 
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return reply.code(404).send({ success: false, error: 'Không tìm thấy đơn đặt sân!' });
+    }
+
+    booking.status = status;
+    await booking.save();
+
+    return reply.send({ 
+      success: true, 
+      message: 'Cập nhật trạng thái đơn thành công!', 
+      data: booking 
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật trạng thái:', error);
+    return reply.code(500).send({ success: false, error: 'Lỗi server nội bộ khi cập nhật trạng thái!' });
+  }
+}
+
+module.exports = { 
+  createBooking, 
+  getOwnerBookings, 
+  updateBookingStatus 
+};

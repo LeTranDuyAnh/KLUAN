@@ -3,25 +3,38 @@ html(lang="vi")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title Lịch sử đặt sân của tôi
+    title Lịch sử đặt sân của tôi - SportHub
     script(src="https://cdn.tailwindcss.com")
     link(href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet")
-  body.bg-gray-50
+  body(class="bg-gray-50 font-sans text-gray-800")
 
-    main(class="max-w-5xl mx-auto px-4 py-10")
-      div(class="flex justify-between items-center mb-6")
+    main(class="max-w-4xl mx-auto px-4 py-8")
+      //- Tiêu đề & Nút quay lại
+      div(class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4")
         div
-          a(href="/" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 mb-2 no-underline")
+          a(href="/" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 mb-2 no-underline transition-colors")
             i(class="fas fa-arrow-left")
             | Về trang chủ
-          h1(class="text-2xl font-black text-gray-900") Lịch sử đặt sân của bạn
+          h1(class="text-2xl font-black text-gray-900 tracking-tight") Lịch sử đặt sân
+          p(class="text-xs text-gray-500 mt-0.5") Theo dõi lịch hẹn và quản lý các khung giờ bạn đã đăng ký.
 
-      div#bookingListContainer(class="space-y-4")
-        div(class="text-center py-12 text-gray-400")
-          i(class="fas fa-spinner fa-spin text-2xl text-emerald-600 mb-2")
-          p(class="text-sm") Đang tải lịch sử đặt sân...
+        //- Thanh tab lọc trạng thái
+        div(class="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-gray-200 shadow-sm self-start md:self-auto")
+          button(onclick="filterBookings('all')" id="tab-all" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm") Tất cả
+          button(onclick="filterBookings('pending')" id="tab-pending" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Chờ duyệt
+          button(onclick="filterBookings('confirmed')" id="tab-confirmed" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã xác nhận
+          button(onclick="filterBookings('cancelled')" id="tab-cancelled" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã hủy
+
+      //- Container chứa danh sách
+      div#bookingListContainer(class="space-y-6")
+        div(class="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm")
+          i(class="fas fa-spinner fa-spin text-3xl text-emerald-600 mb-3")
+          p(class="text-sm text-gray-400 font-medium") Đang tải danh sách lịch đặt...
 
     script.
+      let allBookings = [];
+      let currentFilter = 'all';
+
       document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -30,8 +43,6 @@ html(lang="vi")
           return;
         }
 
-        const container = document.getElementById('bookingListContainer');
-
         try {
           const res = await fetch('/api/customer/bookings', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -39,52 +50,103 @@ html(lang="vi")
           const data = await res.json();
 
           if (!data.success || !data.bookings || data.bookings.length === 0) {
-            container.innerHTML = `
-              <div class="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+            document.getElementById('bookingListContainer').innerHTML = `
+              <div class="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
                 <i class="fas fa-calendar-times text-4xl text-gray-300 mb-3"></i>
                 <p class="text-gray-500 text-sm font-medium">Bạn chưa có lịch đặt sân nào.</p>
-                <a href="/" class="inline-block mt-4 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md no-underline">Đặt sân ngay</a>
+                <a href="/" class="inline-block mt-4 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all no-underline">Đặt sân ngay</a>
               </div>`;
             return;
           }
 
-          container.innerHTML = data.bookings.map(item => {
+          allBookings = data.bookings;
+          renderBookings();
+        } catch (err) {
+          console.error(err);
+          document.getElementById('bookingListContainer').innerHTML = `<p class="text-center text-rose-500 text-xs py-8">Không thể kết nối đến máy chủ.</p>`;
+        }
+      });
+
+      function filterBookings(status) {
+        currentFilter = status;
+        ['all', 'pending', 'confirmed', 'cancelled'].forEach(s => {
+          const btn = document.getElementById(`tab-${s}`);
+          if (s === status) {
+            btn.className = "px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm";
+          } else {
+            btn.className = "px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100";
+          }
+        });
+        renderBookings();
+      }
+
+      function renderBookings() {
+        const container = document.getElementById('bookingListContainer');
+        
+        const filtered = allBookings.filter(item => {
+          if (currentFilter === 'all') return true;
+          return item.status === currentFilter;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+              <p class="text-gray-400 text-sm font-medium">Không có đơn đặt sân nào ở trạng thái này.</p>
+            </div>`;
+          return;
+        }
+
+        // Nhóm các đơn theo ngày (date)
+        const groupedByDate = filtered.reduce((acc, item) => {
+          const dateKey = item.date || 'Khác';
+          if (!acc[dateKey]) acc[dateKey] = [];
+          acc[dateKey].push(item);
+          return acc;
+        }, {});
+
+        // Sắp xếp ngày giảm dần hoặc tăng dần tùy ý (ở đây dùng thứ tự key)
+        const sortedDates = Object.keys(groupedByDate).sort().reverse();
+
+        container.innerHTML = sortedDates.map(date => {
+          const bookingsOnDate = groupedByDate[date];
+          
+          const cardsHtml = bookingsOnDate.map(item => {
             const yard = item.yard || {};
             let statusBadge = '';
             if (item.status === 'pending') {
-              statusBadge = '<span class="bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Đang chờ duyệt</span>';
+              statusBadge = '<span class="bg-amber-50 text-amber-600 border border-amber-200/60 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">Chờ duyệt</span>';
             } else if (item.status === 'confirmed') {
-              statusBadge = '<span class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Đã xác nhận</span>';
+              statusBadge = '<span class="bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">Đã xác nhận</span>';
             } else {
-              statusBadge = '<span class="bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Đã hủy</span>';
+              statusBadge = '<span class="bg-rose-50 text-rose-600 border border-rose-200/60 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">Đã hủy</span>';
             }
 
             return `
-              <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                  <img src="${yard.image || yard.imageUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop'}" class="w-20 h-20 rounded-xl object-cover flex-shrink-0" alt="">
+                  <img src="${yard.image || yard.imageUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover flex-shrink-0 bg-gray-100" alt="Sân">
                   <div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase">${yard.type || 'Thể thao'}</span>
+                    <div class="flex items-center gap-2 mb-1.5">
+                      <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md uppercase tracking-wider">${yard.type || 'Thể thao'}</span>
                       ${statusBadge}
                     </div>
-                    <h3 class="font-bold text-gray-900 text-base">${yard.name || 'Sân đã bị xóa'}</h3>
-                    <p class="text-xs text-gray-500 mb-1"><i class="fas fa-map-marker-alt text-emerald-500 mr-1"></i> ${yard.location || yard.address || 'Đang cập nhật'}</p>
-                    <p class="text-xs text-gray-600 font-semibold mt-1">
-                        📅 Ngày đá: <span class="text-emerald-600">${item.date}</span> | ⏰ Giờ: <span class="text-gray-900">${item.startTime || '--:--'} - ${item.endTime || '--:--'}</span>
+                    <h3 class="font-bold text-gray-900 text-base leading-snug">${yard.name || 'Sân bóng'}</h3>
+                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-map-marker-alt text-emerald-500 mr-1.5"></i>${yard.location || yard.address || 'Đang cập nhật địa chỉ'}</p>
+                    <p class="text-xs text-gray-700 font-semibold mt-2 flex items-center gap-1.5">
+                      <i class="far fa-clock text-emerald-600"></i> Ca chơi: <span class="text-gray-900 font-bold">${item.startTime || '--:--'} - ${item.endTime || '--:--'}</span>
                     </p>
                   </div>
                 </div>
 
-                <div class="flex flex-col items-end justify-between w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
-                  <div class="text-right mb-2">
-                    <span class="text-[10px] text-gray-400 block uppercase font-bold">Tổng tiền</span>
-                    <span class="text-emerald-600 font-black text-sm">${item.totalPrice ? item.totalPrice.toLocaleString() + 'đ' : 'Liên hệ'}</span>
+                <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 gap-3">
+                  <div class="text-left sm:text-right">
+                    <span class="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Tổng tiền</span>
+                    <span class="text-emerald-600 font-black text-base">${item.totalPrice ? item.totalPrice.toLocaleString('vi-VN') + 'đ' : 'Liên hệ'}</span>
                   </div>
                   
                   ${item.status === 'pending' ? `
-                    <button onclick="cancelBooking('${item._id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold rounded-xl transition-all border border-rose-100">
-                      Hủy lịch đặt
+                    <button onclick="cancelBooking('${item._id}')" class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold rounded-xl transition-all border border-rose-100">
+                      Hủy lịch
                     </button>
                   ` : ''}
                 </div>
@@ -92,11 +154,19 @@ html(lang="vi")
             `;
           }).join('');
 
-        } catch (err) {
-          console.error(err);
-          container.innerHTML = `<p class="text-center text-rose-500 text-xs">Không thể tải dữ liệu lịch sử đặt sân.</p>`;
-        }
-      });
+          return `
+            <div class="space-y-3">
+              <div class="flex items-center gap-2 px-1">
+                <div class="w-2 h-2 rounded-full bg-emerald-600"></div>
+                <h2 class="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Ngày: ${date}</h2>
+              </div>
+              <div class="space-y-3">
+                ${cardsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
 
       async function cancelBooking(id) {
         if (!confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này không?')) return;
@@ -105,7 +175,7 @@ html(lang="vi")
         try {
           const res = await fetch(`/api/customer/bookings/${id}/cancel`, {
             method: 'PATCH',
-            headers: { 'Authorization': `Bearer ` + token }
+            headers: { 'Authorization': 'Bearer ' + token }
           });
           const result = await res.json();
           if (res.ok && result.success) {

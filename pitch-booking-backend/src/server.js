@@ -9,6 +9,9 @@ const homeRoutes = require('./routes/home.route');
 const authRoutes = require('./routes/auth.route');
 const ownerRoutes = require('./routes/owner.routes');
 
+const bookingController = require('./controllers/booking.controller');
+const { verifyJWT, verifyRole } = require('./middleware/auth.middleware');
+
 // 1. Đăng ký các plugin cốt lõi (Multipart & Static) TRƯỚC TIÊN
 fastify.register(require('@fastify/multipart'), {
   limits: {
@@ -43,7 +46,21 @@ fastify.get('/owner', async (request, reply) => {
 });
 fastify.register(ownerRoutes);
 fastify.register(require('./routes/customer.route'));
+fastify.get('/owner/bookings', async (request, reply) => {
+  return reply.view('owner-bookings.pug'); // Đảm bảo bạn đã có file owner-bookings.pug trong thư mục views
+});
+// API lấy danh sách đơn dành cho chủ sân (sử dụng verifyJWT và verifyRole('owner'))
+fastify.get('/api/owner/bookings', { preHandler: [verifyJWT, verifyRole('owner')] }, bookingController.getOwnerBookings);
 
+// API duyệt/hủy đơn của chủ sân
+fastify.put('/api/owner/bookings/:id/status', { preHandler: [verifyJWT, verifyRole('owner')] }, bookingController.updateBookingStatus);
+fastify.get('/owner/yards/new', async (request, reply) => {
+  return reply.view('add-yard.pug', {
+    activePage: 'add-yard',
+    headerTitle: 'Thêm cơ sở sân mới',
+    headerSubtitle: 'Tạo cụm sân và các sân con linh hoạt'
+  });
+});
 // Khởi chạy server
 const start = async () => {
   try {

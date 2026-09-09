@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
   yard: { type: mongoose.Schema.Types.ObjectId, ref: 'Yard', required: true },
+  subFieldId: { type: mongoose.Schema.Types.ObjectId, required: true }, // ID của sân con cụ thể
+  subFieldName: { type: String, required: true },                       // Tên sân con (VD: "Sân 1")
   customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: String, required: true }, // Ngày đá (YYYY-MM-DD)
   startTime: { type: String, required: true }, // Giờ bắt đầu, VD: "16:30"

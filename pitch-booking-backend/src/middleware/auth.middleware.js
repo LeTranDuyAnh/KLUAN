@@ -34,3 +34,4 @@ function verifyRole(requiredRole) {
 }
 
 module.exports = { verifyJWT, verifyRole };
+

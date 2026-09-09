@@ -96,6 +96,10 @@ html(lang="vi")
             i.fas.fa-futbol
             span Quản lý Sân
         li
+          a(href="/owner/yards/new" class=(activePage === 'add-yard' ? 'active' : ''))
+            i.fas.fa-plus-circle
+            span Thêm sân mới
+        li
           a(href="/owner/bookings" class=(activePage === 'bookings' ? 'active' : ''))
             i.fas.fa-clipboard-check
             span Duyệt đơn đặt sân
