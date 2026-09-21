@@ -4,7 +4,7 @@ block content
   .container.py-4
     .row.mb-4
       .col-md-7
-        p.text-muted Quản lý đa môn thể thao: Bóng đá, Bóng rổ, Tennis, Pickleball...
+        p.text-muted Quản lý cụm sân và các sân con bên trong phục vụ đặt lịch linh hoạt.
       .col-md-5.text-end.d-flex.align-items-center.justify-content-end.gap-2
         //- Bộ lọc theo môn thể thao
         select.form-select.form-select-sm(id="filterCategory" onchange="filterYards()" style="width: 170px;")
@@ -17,7 +17,7 @@ block content
         
         button.btn.btn-success.text-nowrap(data-bs-toggle="modal" data-bs-target="#yardModal" onclick="resetForm()")
           i.fas.fa-plus.me-2
-          | Thêm sân mới
+          | Thêm cụm sân mới
 
     //- Bảng danh sách sân
     .card.shadow-sm
@@ -27,71 +27,88 @@ block content
             thead.table-success
               tr
                 th Ảnh
-                th Tên sân
+                th Tên cơ sở
                 th Môn / Thể loại
+                th Sân con bên trong
                 th Địa điểm
                 th Giá Sáng (VNĐ/h)
                 th Giá Tối (VNĐ/h)
-                th Trạng thái
                 th.text-center Thao tác
             tbody#yardTableBody
               //- Render bằng JS
 
   //- Modal Thêm / Sửa sân
   .modal.fade#yardModal(tabindex="-1")
-    .modal-dialog
+    .modal-dialog.modal-lg
       .modal-content
-        .modal-header
-          h5.modal-title#modalTitle Thêm sân mới
-          button.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-header.bg-success.text-white
+          h5.modal-title#modalTitle Thêm cụm sân mới
+          button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
         .modal-body
           form#yardForm
             input(type="hidden" id="yardId")
             .mb-3
-              label.form-label Tên sân
-              input.form-control(type="text" id="name" required placeholder="Ví dụ: Sân bóng số 1, Sân Pickleball A...")
-            
-            .mb-3
-              label.form-label Môn thể thao
-              select.form-select(id="category" required onchange="handleCategoryChange()")
-                option(value="" disabled selected) -- Chọn môn thể thao --
-                option(value="Bóng đá") Bóng đá
-                option(value="Bóng rổ") Bóng rổ
-                option(value="Tennis") Tennis
-                option(value="Pickleball") Pickleball
-                option(value="Cầu lông") Cầu lông
-
-            //- Phân loại chi tiết (chỉ hiện khi chọn Bóng đá)
-            .mb-3#subTypeContainer(style="display: none;")
-              label.form-label Quy mô sân bóng đá
-              select.form-select(id="subType")
-                option(value="Sân 5") Sân 5 người
-                option(value="Sân 7") Sân 7 người
-                option(value="Sân 11") Sân 11 người
-
-            .mb-3
-              label.form-label Địa chỉ / Khu vực
-              input.form-control(type="text" id="location" required)
+              label.form-label.fw-bold Tên cụm sân / Cơ sở
+              input.form-control(type="text" id="name" required placeholder="Ví dụ: Cụm sân bóng Nông Nghiệp...")
             
             .row
               .col-md-6.mb-3
-                label.form-label 
+                label.form-label.fw-bold Môn thể thao
+                select.form-select(id="category" required onchange="handleCategoryChange()")
+                  option(value="" disabled selected) -- Chọn môn thể thao --
+                  option(value="Bóng đá") Bóng đá
+                  option(value="Bóng rổ") Bóng rổ
+                  option(value="Tennis") Tennis
+                  option(value="Pickleball") Pickleball
+                  option(value="Cầu lông") Cầu lông
+
+              .col-md-6.mb-3#subTypeContainer(style="display: none;")
+                label.form-label.fw-bold Quy mô sân bóng đá
+                select.form-select(id="subType")
+                  option(value="Sân 5") Sân 5 người
+                  option(value="Sân 7") Sân 7 người
+                  option(value="Sân 11") Sân 11 người
+
+            .mb-3
+              label.form-label.fw-bold Địa chỉ / Khu vực
+              input.form-control(type="text" id="location" required placeholder="Ví dụ: Trâu Quỳ, Gia Lâm, Hà Nội")
+            
+            .row
+              .col-md-6.mb-3
+                label.form-label.fw-bold 
                   i.fas.fa-sun.text-warning.me-1
                   | Giá Sáng (VNĐ/h)
                 input.form-control(type="number" id="priceMorning" min="0" required placeholder="Ví dụ: 200000")
               .col-md-6.mb-3
-                label.form-label 
+                label.form-label.fw-bold 
                   i.fas.fa-moon.text-primary.me-1
                   | Giá Tối (VNĐ/h)
                 input.form-control(type="number" id="priceEvening" min="0" required placeholder="Ví dụ: 350000")
 
+            hr.my-4
+
+            //- Quản lý danh sách sân con động
+            .d-flex.align-items-center.justify-content-between.mb-2
+              label.form-label.fw-bold.mb-0 
+                i.fas.fa-th-large.text-success.me-1
+                | Danh sách sân con bên trong cơ sở (VD: Sân 1, Sân 2...)
+              button.btn.btn-outline-success.btn-sm(type="button" onclick="addSubFieldInput('')")
+                i.fas.fa-plus.me-1
+                | Thêm sân con
+
+            div#subFieldsContainer.mb-4.space-y-2
+              //- Các ô input sân con sẽ render bằng JS
+
+            hr.my-4
+
             .mb-3
-              label.form-label Ảnh chính của sân (1 ảnh)
+              label.form-label.fw-bold Ảnh chính của sân (Ảnh đại diện)
               input.form-control(type="file" id="image" accept="image/*")
             .mb-3
-              label.form-label Ảnh phụ (Tối đa 3 ảnh)
+              label.form-label.fw-bold Ảnh phụ (Tối đa 3 ảnh)
               input.form-control(type="file" id="subImages" accept="image/*" multiple)   
-            button.btn.btn-success.w-100(type="submit") Lưu thông tin
+            
+            button.btn.btn-success.w-100.py-2.fw-bold(type="submit") Lưu thông tin cơ sở sân
 
   //- Modal Xem chi tiết sân
   .modal.fade#detailYardModal(tabindex="-1")
@@ -100,19 +117,19 @@ block content
         .modal-header.bg-success.text-white
           h5.modal-title
             i.fas.fa-info-circle.me-2
-            | Chi tiết thông tin sân
+            | Chi tiết cụm sân và các sân con
           button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
         .modal-body
           .row.mb-3
             .col-md-6
               p
-                strong Tên sân: 
+                strong Tên cơ sở: 
                 span#detailName
               p
                 strong Môn thể thao: 
                 span.badge.bg-success#detailCategory
               p#detailSubTypeWrapper(style="display: none;")
-                strong Quy mô sân bóng: 
+                strong Quy mô: 
                 span.badge.bg-warning.text-dark#detailSubType 
               p
                 strong Địa điểm: 
@@ -125,14 +142,14 @@ block content
                 strong Giá ca tối: 
                 span.text-primary.fw-bold#detailPriceEvening
               p
-                strong Trạng thái: 
-                span.badge.bg-primary Hoạt động
+                strong Danh sách sân con: 
+                div#detailSubFieldsList.mt-1.d-flex.flex-wrap.gap-1
           
           hr
           .mb-3
             label.form-label.fw-bold 
               i.fas.fa-image.me-1.text-success
-              | Ảnh đại diện (Ảnh chính):
+              | Ảnh đại diện:
             div#detailMainImageContainer.mt-2
 
           .mb-3
@@ -150,10 +167,10 @@ block content
         .modal-header.bg-danger.text-white
           h5.modal-title 
             i.fas.fa-exclamation-triangle.me-2
-            | Xác nhận xóa sân
+            | Xác nhận xóa cơ sở sân
           button.btn-close.btn-close-white(type="button" data-bs-dismiss="modal")
         .modal-body
-          p Bạn có chắc chắn muốn xóa sân này không? Hành động này không thể hoàn tác và mọi thông tin của sân sẽ bị xóa khỏi hệ thống.
+          p Bạn có chắc chắn muốn xóa cơ sở sân này cùng toàn bộ các sân con bên trong không? Hành động này không thể hoàn tác.
           input(type="hidden" id="deleteYardId")
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Hủy bỏ
@@ -183,7 +200,6 @@ block scripts
       }
     }
 
-    // Xử lý hiển thị ô chọn Sân 5/7/11 khi chọn môn Bóng đá
     function handleCategoryChange() {
       const category = document.getElementById('category').value;
       const subTypeContainer = document.getElementById('subTypeContainer');
@@ -195,7 +211,6 @@ block scripts
       }
     }
 
-    // Lọc danh sách theo môn thể thao
     function filterYards() {
       const selectedCategory = document.getElementById('filterCategory').value;
       let filtered = allYards;
@@ -205,11 +220,25 @@ block scripts
       renderTable(filtered);
     }
 
+    // Thêm ô nhập sân con động trong form
+    function addSubFieldInput(nameVal = '') {
+      const container = document.getElementById('subFieldsContainer');
+      const div = document.createElement('div');
+      div.className = "input-group mb-2";
+      div.innerHTML = `
+        <input type="text" class="form-control form-control-sm" name="subFieldNames" required value="${nameVal}" placeholder="VD: Sân số 1">
+        <button class="btn btn-outline-danger btn-sm" type="button" onclick="this.closest('.input-group').remove()">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+      container.appendChild(div);
+    }
+
     function renderTable(yards) {
       const tbody = document.getElementById('yardTableBody');
       tbody.innerHTML = '';
       if(!yards || yards.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Không tìm thấy sân nào phù hợp.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Không tìm thấy cơ sở sân nào phù hợp.</td></tr>`;
         return;
       }
       yards.forEach(yard => {
@@ -218,15 +247,21 @@ block scripts
         const sportCategory = yard.category || yard.type || 'Bóng đá';
         const sportSubType = (sportCategory === 'Bóng đá' && yard.subType) ? ` (${yard.subType})` : '';
 
+        // Hiển thị danh sách sân con dạng badges
+        let subFieldsHtml = '<span class="text-muted small">Chưa có sân con</span>';
+        if (yard.subFields && yard.subFields.length > 0) {
+          subFieldsHtml = yard.subFields.map(sf => `<span class="badge bg-light text-dark border me-1 mb-1">${sf.name}</span>`).join('');
+        }
+
         tbody.innerHTML += `
           <tr>
             <td>${imgTag}</td>
-            <td>${yard.name}</td>
+            <td class="fw-bold">${yard.name}</td>
             <td><span class="badge bg-secondary">${sportCategory}${sportSubType}</span></td>
+            <td>${subFieldsHtml}</td>
             <td>${yard.location}</td>
             <td><span class="text-warning fw-bold">${(yard.priceMorning || 0).toLocaleString()} đ</span></td>
             <td><span class="text-primary fw-bold">${(yard.priceEvening || 0).toLocaleString()} đ</span></td>
-            <td><span class="badge bg-primary">Hoạt động</span></td>
             <td class="text-center">
               <button class="btn btn-sm btn-outline-info me-1" onclick="openDetailModal('${yard._id}')" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
               <button class="btn btn-sm btn-outline-warning me-1" onclick="openEditModal('${yard._id}')" title="Sửa"><i class="fas fa-edit"></i></button>
@@ -238,11 +273,16 @@ block scripts
     }
 
     function resetForm() {
-      document.getElementById('modalTitle').innerText = 'Thêm sân mới';
+      document.getElementById('modalTitle').innerText = 'Thêm cụm sân mới';
       document.getElementById('yardForm').reset();
       document.getElementById('yardId').value = '';
       document.getElementById('subTypeContainer').style.display = 'none';
       document.getElementById('image').setAttribute('required', 'required');
+      
+      // Reset danh sách sân con mặc định 1 ô trống
+      const container = document.getElementById('subFieldsContainer');
+      container.innerHTML = '';
+      addSubFieldInput('Sân số 1');
     }
 
     function openDetailModal(id) {
@@ -263,6 +303,17 @@ block scripts
         document.getElementById('detailSubType').innerText = yard.subType || 'Sân 5';
       } else {
         subTypeWrapper.style.display = 'none';
+      }
+
+      // Render danh sách sân con trong modal chi tiết
+      const subFieldsListContainer = document.getElementById('detailSubFieldsList');
+      subFieldsListContainer.innerHTML = '';
+      if (yard.subFields && yard.subFields.length > 0) {
+        yard.subFields.forEach(sf => {
+          subFieldsListContainer.innerHTML += `<span class="badge bg-success">${sf.name}</span>`;
+        });
+      } else {
+        subFieldsListContainer.innerHTML = `<span class="text-muted small">Không có sân con nào</span>`;
       }
 
       const mainImgContainer = document.getElementById('detailMainImageContainer');
@@ -304,7 +355,7 @@ block scripts
       const yard = allYards.find(y => y._id === id);
       if (!yard) return;
 
-      document.getElementById('modalTitle').innerText = 'Chỉnh sửa thông tin sân';
+      document.getElementById('modalTitle').innerText = 'Chỉnh sửa thông tin cơ sở sân';
       document.getElementById('yardId').value = yard._id;
       document.getElementById('name').value = yard.name;
       
@@ -321,6 +372,17 @@ block scripts
       document.getElementById('priceEvening').value = yard.priceEvening;
       
       document.getElementById('image').removeAttribute('required');
+
+      // Điền danh sách sân con hiện có vào form sửa
+      const container = document.getElementById('subFieldsContainer');
+      container.innerHTML = '';
+      if (yard.subFields && yard.subFields.length > 0) {
+        yard.subFields.forEach(sf => {
+          addSubFieldInput(sf.name);
+        });
+      } else {
+        addSubFieldInput('Sân số 1');
+      }
 
       const modal = new bootstrap.Modal(document.getElementById('yardModal'));
       modal.show();
@@ -382,6 +444,21 @@ block scripts
       formData.append('location', document.getElementById('location').value);
       formData.append('priceMorning', priceMorningVal);
       formData.append('priceEvening', priceEveningVal);
+
+      // Thu thập toàn bộ tên sân con từ các ô input
+      const subFieldInputs = document.querySelectorAll('input[name="subFieldNames"]');
+      let hasValidSubField = false;
+      subFieldInputs.forEach(input => {
+        if (input.value.trim() !== '') {
+          formData.append('subFieldNames', input.value.trim());
+          hasValidSubField = true;
+        }
+      });
+
+      if (!hasValidSubField) {
+        alert('Cơ sở sân phải có ít nhất một sân con bên trong!');
+        return;
+      }
 
       const mainImageFile = document.getElementById('image').files[0];
       if (mainImageFile) {

@@ -104,7 +104,6 @@ html(lang="vi")
           return acc;
         }, {});
 
-        // Sắp xếp ngày giảm dần hoặc tăng dần tùy ý (ở đây dùng thứ tự key)
         const sortedDates = Object.keys(groupedByDate).sort().reverse();
 
         container.innerHTML = sortedDates.map(date => {
@@ -126,8 +125,12 @@ html(lang="vi")
                 <div class="flex items-center gap-4">
                   <img src="${yard.image || yard.imageUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover flex-shrink-0 bg-gray-100" alt="Sân">
                   <div>
-                    <div class="flex items-center gap-2 mb-1.5">
+                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md uppercase tracking-wider">${yard.type || 'Thể thao'}</span>
+                      <!-- HIỂN THỊ TÊN SÂN CON (SUBFIELD) -->
+                      <span class="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <i class="fas fa-futbol text-[9px]"></i> ${item.subFieldName || 'Sân tiêu chuẩn'}
+                      </span>
                       ${statusBadge}
                     </div>
                     <h3 class="font-bold text-gray-900 text-base leading-snug">${yard.name || 'Sân bóng'}</h3>

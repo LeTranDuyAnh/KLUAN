@@ -29,45 +29,63 @@ function calculatePrice(startTime, endTime, priceMorning, priceEvening) {
 // 1. API Tạo đơn đặt sân
 async function createBooking(req, reply) {
   try {
-    const { yardId, subFieldId, date, startTime, endTime } = req.body;
+    const { yardId, subFieldId, date, slots } = req.body;
     const customerId = req.user.userId || req.user._id;
 
+    if (!yardId || !subFieldId || !date || !slots || slots.length === 0) {
+      return reply.code(400).send({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin đặt sân!' });
+    }
+
+    // 1. Tìm cụm sân tổng
     const yard = await Yard.findById(yardId);
     if (!yard) {
-      return reply.code(404).send({ success: false, error: 'Không tìm thấy sân bóng!' });
+      return reply.code(404).send({ success: false, error: 'Không tìm thấy cơ sở sân bóng!' });
     }
 
-    // Tìm sân con trong mảng subFields của Yard
+    // 2. Tìm đúng sân con bên trong mảng subFields để lấy cả ID và TÊN chính xác
     const subField = yard.subFields.id(subFieldId) || yard.subFields.find(sf => sf._id.toString() === subFieldId);
-    if (!subField) {
-      return reply.code(404).send({ success: false, error: 'Không tìm thấy sân con trong cơ sở này!' });
+    if (!subField || subField.status !== 'active') {
+      return reply.code(400).send({ success: false, error: 'Sân con này không tồn tại hoặc đang bảo trì!' });
     }
 
-    // Kiểm tra trùng lịch trên đúng sân con đó
+    // 3. Kiểm tra trùng lịch trên subFieldId này
     const existingBooking = await Booking.findOne({
       yard: yardId,
       subFieldId: subField._id,
       date: date,
       status: { $in: ['pending', 'confirmed'] },
-      $or: [
-        { startTime: { $lt: endTime }, endTime: { $gt: startTime } }
-      ]
+      slots: { $in: slots }
     });
 
     if (existingBooking) {
-      return reply.code(400).send({ success: false, error: `Sân ${subField.name} đã có người đặt trong khung giờ này, vui lòng chọn giờ khác!` });
+      return reply.code(400).send({ 
+        success: false, 
+        error: `Sân ${subField.name} đã có người đặt trong khung giờ này!` 
+      });
     }
 
-    const totalPrice = calculatePrice(startTime, endTime, yard.priceMorning, yard.priceEvening);
+    // 4. Tính toán tổng tiền tự động theo block 30 phút
+    let totalPrice = 0;
+    const blockMorningRate = yard.priceMorning / 2;
+    const blockEveningRate = yard.priceEvening / 2;
 
+    slots.forEach(slot => {
+      const [h] = slot.split(':').map(Number);
+      if (h >= 5 && h < 18) {
+        totalPrice += blockMorningRate;
+      } else {
+        totalPrice += blockEveningRate;
+      }
+    });
+
+    // 5. Khởi tạo và lưu Booking mới (Đã có đủ subFieldId và subFieldName)
     const newBooking = new Booking({
-      customer: customerId,
       yard: yardId,
-      subFieldId: subField._id,
-      subFieldName: subField.name,
+      subFieldId: subField._id,         // Lấy từ subField tìm được
+      subFieldName: subField.name,      // Lấy tên sân con (VD: "Sân số 1") từ DB ra gán vào đây
+      customer: customerId,
       date,
-      startTime,
-      endTime,
+      slots,
       totalPrice,
       status: 'pending'
     });
@@ -76,13 +94,13 @@ async function createBooking(req, reply) {
 
     return reply.code(201).send({
       success: true,
-      message: `Đặt ${subField.name} thành công, vui lòng chờ chủ sân duyệt!`,
+      message: `Đặt thành công ${subField.name}! Vui lòng chờ chủ sân duyệt đơn.`,
       data: newBooking
     });
 
   } catch (error) {
-    console.error('Lỗi tạo đơn:', error);
-    return reply.code(500).send({ success: false, error: 'Lỗi server nội bộ!' });
+    console.error('Lỗi tạo đơn đặt sân:', error);
+    return reply.code(500).send({ success: false, error: error.message || 'Lỗi server nội bộ!' });
   }
 }
 

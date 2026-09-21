@@ -40,23 +40,27 @@ async function ownerRoutes(fastify, options) {
     }
   });
 
-  // 2. POST: Thêm sân mới
+  // 2. POST: Thêm sân mới kèm danh sách sân con
   fastify.post('/api/owner/yards', { preHandler: verifyOwner }, async (request, reply) => {
     try {
       const ownerId = request.user.id || request.user._id || request.user.userId;
       
-      let name, type, location, priceMorning, priceEvening;
+      let name, type, category, subType, location, priceMorning, priceEvening;
       let mainImagePath = '';
       let subImagePaths = [];
+      let subFieldNames = [];
 
       const parts = request.parts();
       for await (const part of parts) {
         if (part.type === 'field') {
           if (part.fieldname === 'name') name = part.value;
           if (part.fieldname === 'type') type = part.value;
+          if (part.fieldname === 'category') category = part.value;
+          if (part.fieldname === 'subType') subType = part.value;
           if (part.fieldname === 'location') location = part.value;
           if (part.fieldname === 'priceMorning') priceMorning = Number(part.value);
           if (part.fieldname === 'priceEvening') priceEvening = Number(part.value);
+          if (part.fieldname === 'subFieldNames') subFieldNames.push(part.value);
         } else if (part.type === 'file') {
           const uploadDir = path.join(__dirname, '../public/uploads');
           if (!fs.existsSync(uploadDir)) {
@@ -81,21 +85,33 @@ async function ownerRoutes(fastify, options) {
         return reply.code(400).send({ success: false, error: 'Giá thuê sân không thể là số âm!' });
       }
 
+      // Xây dựng mảng sân con từ form gửi lên
+      const formattedSubFields = subFieldNames
+        .filter(n => n && n.trim() !== '')
+        .map(subName => ({ name: subName.trim(), status: 'active' }));
+
+      if (formattedSubFields.length === 0) {
+        return reply.code(400).send({ success: false, error: 'Cơ sở phải có ít nhất một sân con bên trong!' });
+      }
+
       const newYard = await Yard.create({
         name,
-        type,
+        type: type || category,
+        category,
+        subType,
         location,
         priceMorning,
         priceEvening,
         owner: ownerId,
         image: mainImagePath,
         subImages: subImagePaths,
+        subFields: formattedSubFields,
         status: 'active'
       });
 
       return reply.code(201).send({
         success: true,
-        message: 'Thêm sân và hình ảnh thành công!',
+        message: 'Thêm cơ sở sân và các sân con thành công!',
         data: newYard
       });
     } catch (err) {
@@ -104,7 +120,7 @@ async function ownerRoutes(fastify, options) {
     }
   });
 
-  // 3. PUT: Sửa thông tin sân
+  // 3. PUT: Sửa thông tin sân và danh sách sân con
   fastify.put('/api/owner/yards/:id', { preHandler: verifyOwner }, async (request, reply) => {
     try {
       const ownerId = request.user.id || request.user._id || request.user.userId;
@@ -115,18 +131,22 @@ async function ownerRoutes(fastify, options) {
         return reply.code(404).send({ success: false, error: 'Không tìm thấy sân hoặc bạn không có quyền sửa!' });
       }
 
-      let name, type, location, priceMorning, priceEvening;
+      let name, type, category, subType, location, priceMorning, priceEvening;
       let mainImagePath = existingYard.image;
       let subImagePaths = existingYard.subImages;
+      let subFieldNames = [];
 
       const parts = request.parts();
       for await (const part of parts) {
         if (part.type === 'field') {
           if (part.fieldname === 'name') name = part.value;
           if (part.fieldname === 'type') type = part.value;
+          if (part.fieldname === 'category') category = part.value;
+          if (part.fieldname === 'subType') subType = part.value;
           if (part.fieldname === 'location') location = part.value;
           if (part.fieldname === 'priceMorning') priceMorning = Number(part.value);
           if (part.fieldname === 'priceEvening') priceEvening = Number(part.value);
+          if (part.fieldname === 'subFieldNames') subFieldNames.push(part.value);
         } else if (part.type === 'file') {
           const uploadDir = path.join(__dirname, '../public/uploads');
           if (!fs.existsSync(uploadDir)) {
@@ -154,17 +174,26 @@ async function ownerRoutes(fastify, options) {
       const updatedData = {};
       if (name) updatedData.name = name;
       if (type) updatedData.type = type;
+      if (category) updatedData.category = category;
+      if (subType) updatedData.subType = subType;
       if (location) updatedData.location = location;
       if (priceMorning !== undefined) updatedData.priceMorning = priceMorning;
       if (priceEvening !== undefined) updatedData.priceEvening = priceEvening;
       if (mainImagePath) updatedData.image = mainImagePath;
       if (subImagePaths.length > 0) updatedData.subImages = subImagePaths;
 
+      // Cập nhật mảng sân con nếu có dữ liệu gửi lên
+      if (subFieldNames.length > 0) {
+        updatedData.subFields = subFieldNames
+          .filter(n => n && n.trim() !== '')
+          .map(subName => ({ name: subName.trim(), status: 'active' }));
+      }
+
       const updatedYard = await Yard.findByIdAndUpdate(yardId, updatedData, { new: true });
 
       return reply.code(200).send({
         success: true,
-        message: 'Cập nhật thông tin sân thành công!',
+        message: 'Cập nhật thông tin cơ sở và sân con thành công!',
         data: updatedYard
       });
     } catch (err) {

@@ -30,14 +30,15 @@ html(lang="vi")
             thead(class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-bold")
               tr
                 th(class="py-4 px-6") Khách hàng
-                th(class="py-4 px-6") Tên sân
+                th(class="py-4 px-6") Tên sân / Cơ sở
+                th(class="py-4 px-6") Sân con
                 th(class="py-4 px-6") Thời gian đá / thuê
                 th(class="py-4 px-6") Tổng tiền
                 th(class="py-4 px-6") Trạng thái
                 th(class="py-4 px-6 text-center") Hành động
             tbody(id="bookingsTableBody" class="divide-y divide-gray-100 text-sm")
               tr
-                td(colspan="6" class="py-8 text-center text-gray-400") Đang tải danh sách đơn...
+                th(colspan="7" class="py-8 text-center text-gray-400") Đang tải danh sách đơn...
 
     script.
       let allBookings = [];
@@ -61,11 +62,11 @@ html(lang="vi")
             allBookings = result.data;
             renderBookings(allBookings);
           } else {
-            document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-500">${result.error || 'Không thể tải dữ liệu'}</td></tr>`;
+            document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="7" class="py-8 text-center text-red-500">${result.error || 'Không thể tải dữ liệu'}</td></tr>`;
           }
         } catch (error) {
           console.error('Lỗi:', error);
-          document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-500">Lỗi kết nối máy chủ!</td></tr>`;
+          document.getElementById('bookingsTableBody').innerHTML = `<tr><td colspan="7" class="py-8 text-center text-red-500">Lỗi kết nối máy chủ!</td></tr>`;
         }
       }
 
@@ -78,7 +79,7 @@ html(lang="vi")
         });
 
         if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-gray-400 font-medium">Không có đơn đặt sân nào.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-400 font-medium">Không có đơn đặt sân nào.</td></tr>`;
           return;
         }
 
@@ -111,6 +112,7 @@ html(lang="vi")
           const customerName = b.customer?.name || 'Khách hàng';
           const customerPhone = b.customer?.phone || '';
           const yardName = b.yard?.name || 'Sân bóng';
+          const subFieldName = b.subFieldName || 'Sân tiêu chuẩn';
           const timeString = `${b.startTime || ''} - ${b.endTime || ''}`;
 
           return `
@@ -119,7 +121,12 @@ html(lang="vi")
                 <div>${customerName}</div>
                 <div class="text-xs text-gray-400 font-normal">${customerPhone}</div>
               </td>
-              <td class="py-4 px-6 text-gray-600 font-medium">${yardName}</td>
+              <td class="py-4 px-6 text-gray-700 font-bold">${yardName}</td>
+              <td class="py-4 px-6">
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-xs px-2.5 py-1 rounded-lg">
+                  <i class="fas fa-futbol text-[10px] mr-1"></i>${subFieldName}
+                </span>
+              </td>
               <td class="py-4 px-6 text-gray-600 text-xs">
                 <div class="font-bold">${b.date || ''}</div>
                 <div class="text-gray-500">${timeString}</div>

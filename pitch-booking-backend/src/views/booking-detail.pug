@@ -14,7 +14,7 @@ html(lang="vi")
         | Quay lại trang chủ
 
       div(class="grid grid-cols-1 lg:grid-cols-3 gap-8")
-        
+       
         //- CỘT TRÁI: Ảnh sân & Thông tin bảng giá
         div(class="lg:col-span-2 space-y-4")
           div(class="rounded-3xl overflow-hidden shadow-md h-80 bg-gray-100")
@@ -39,7 +39,7 @@ html(lang="vi")
               i(class="fas fa-map-marker-alt text-emerald-500")
               span= yard.location || yard.address || 'Đang cập nhật'
             hr(class="border-gray-100 my-4")
-            
+           
             h4(class="font-bold text-sm text-gray-800 mb-2") Bảng giá dịch vụ
             div(class="grid grid-cols-2 gap-4")
               div(class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100")
@@ -51,7 +51,7 @@ html(lang="vi")
 
         //- CỘT PHẢI: Thông tin chủ sân & Lưới chọn khung giờ đặt sân
         div(class="lg:col-span-1 space-y-6")
-          
+         
           //- KHUNG THÔNG TIN CHỦ SÂN
           div(class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm")
             h4(class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2")
@@ -72,28 +72,43 @@ html(lang="vi")
             h3(class="font-black text-lg text-gray-900 mb-4 flex items-center gap-2")
               i(class="fas fa-calendar-alt text-emerald-600")
               | Chọn Lịch Đặt Sân
-            
+           
             form#bookingForm(class="space-y-4")
               input(type="hidden" id="yardId" value=yard._id)
-              
+             
+              //- 1. Chọn sân con cụ thể
               div
-                label(class="block text-xs font-bold text-gray-500 uppercase mb-1") 1. Chọn ngày đá
+                label(class="block text-xs font-bold text-gray-500 uppercase mb-2") 1. Chọn sân cụ thể
+                div(id="subFieldsContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2")
+                  if yard.subFields && yard.subFields.length > 0
+                    each sf in yard.subFields
+                      if sf.status === 'active'
+                        button(type="button" onclick=`selectSubField('${sf._id}', '${sf.name}', this)` class="subfield-btn border border-gray-200 hover:border-emerald-500 p-2.5 rounded-xl text-center transition-all bg-white font-bold text-xs text-gray-700")
+                          div(class="font-black text-sm text-gray-900")= sf.name
+                          span(class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full") Trống
+                  else
+                    p(class="col-span-3 text-xs text-rose-500 italic") Cơ sở này chưa cập nhật danh sách sân con.
+
+                input(type="hidden" id="selectedSubFieldId" required)
+
+              //- 2. Chọn ngày đá
+              div
+                label(class="block text-xs font-bold text-gray-500 uppercase mb-1") 2. Chọn ngày đá
                 input(type="date" id="bookingDate" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500")
 
+              //- 3. Chọn khung giờ
               div
                 div(class="flex items-center justify-between mb-2")
-                  label(class="block text-xs font-bold text-gray-500 uppercase") 2. Chọn khung giờ (Mỗi ô 30 phút)
+                  label(class="block text-xs font-bold text-gray-500 uppercase") 3. Chọn khung giờ (Mỗi ô 30 phút)
                   span(class="text-[10px] text-gray-400") Bấm để chọn/bỏ chọn
-                
-                //- Chú thích trạng thái ô
+               
                 div(class="flex items-center gap-3 text-[11px] text-gray-500 mb-2")
                   span(class="flex items-center gap-1") <span class="w-3 h-3 bg-white border border-gray-200 rounded"></span> Trống
                   span(class="flex items-center gap-1") <span class="w-3 h-3 bg-emerald-500 rounded"></span> Đang chọn
                   span(class="flex items-center gap-1") <span class="w-3 h-3 bg-gray-200 rounded"></span> Đã đặt
 
-                //- Lưới slot giờ 30 phút
                 div#slotsContainer(class="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1 border border-gray-100 rounded-2xl bg-gray-50/50")
-                  p(class="col-span-3 text-center text-xs text-gray-400 py-4") Vui lòng chọn ngày trước để xem lịch trống.
+                  p(class="col-span-3 text-center text-xs text-gray-400 py-4") Vui lòng chọn sân con và ngày trước để xem lịch trống.
 
               //- Thông tin tổng kết tạm tính
               div(class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-1")
@@ -114,21 +129,33 @@ html(lang="vi")
       const priceMorning = Number("#{yard.priceMorning || 0}");
       const priceEvening = Number("#{yard.priceEvening || 0}");
       let selectedSlots = [];
+      let selectedSubFieldId = null;
 
       function changeMainImage(url) {
         document.getElementById('mainImage').src = url;
       }
 
-      // Đặt mặc định ngày hôm nay cho ô chọn ngày
       const todayStr = new Date().toISOString().split('T')[0];
       const dateInput = document.getElementById('bookingDate');
       dateInput.value = todayStr;
       dateInput.min = todayStr;
 
-      // Sinh toàn bộ các ô 30 phút từ 05:00 đến 05:00 sáng hôm sau
+      function selectSubField(id, name, element) {
+        selectedSubFieldId = id;
+        document.getElementById('selectedSubFieldId').value = id;
+
+        document.querySelectorAll('.subfield-btn').forEach(btn => {
+          btn.classList.remove('border-emerald-600', 'bg-emerald-50/50', 'ring-2', 'ring-emerald-600/20');
+        });
+
+        element.classList.add('border-emerald-600', 'bg-emerald-50/50', 'ring-2', 'ring-emerald-600/20');
+
+        fetchSlotsStatus();
+      }
+
       function generateAllTimeSlots() {
         const slots = [];
-        for (let h = 5; h < 29; h++) { // 29 tương đương 05:00 sáng hôm sau (24 + 5)
+        for (let h = 5; h < 29; h++) {
           const realH = h % 24;
           const hourStr = String(realH).padStart(2, '0');
           slots.push(`${hourStr}:00`);
@@ -137,17 +164,18 @@ html(lang="vi")
         return slots;
       }
 
-      // Tải trạng thái lịch trống của sân khi thay đổi ngày
       async function fetchSlotsStatus() {
         const yardId = document.getElementById('yardId').value;
         const date = dateInput.value;
-        if (!date) return;
+        
+        if (!date || !selectedSubFieldId) {
+          return;
+        }
 
         try {
-          const res = await fetch(`/api/bookings/slots?yardId=${yardId}&date=${date}`);
+          const res = await fetch(`/api/bookings/slots?yardId=${yardId}&subFieldId=${selectedSubFieldId}&date=${date}`);
           const data = await res.json();
           const bookedSlots = data.bookedSlots || [];
-
           renderSlotsGrid(bookedSlots);
         } catch (err) {
           console.error("Lỗi tải lịch sân:", err);
@@ -157,7 +185,7 @@ html(lang="vi")
       function renderSlotsGrid(bookedSlots) {
         const container = document.getElementById('slotsContainer');
         const allSlots = generateAllTimeSlots();
-        selectedSlots = []; // Reset lựa chọn khi đổi ngày
+        selectedSlots = [];
         updateSummary();
 
         container.innerHTML = allSlots.map(slot => {
@@ -172,12 +200,10 @@ html(lang="vi")
 
       function toggleSlot(element, slot) {
         if (element.classList.contains('bg-emerald-500')) {
-          // Bỏ chọn
           element.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-500');
           element.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
           selectedSlots = selectedSlots.filter(s => s !== slot);
         } else {
-          // Chọn
           element.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
           element.classList.add('bg-emerald-500', 'text-white', 'border-emerald-500');
           selectedSlots.push(slot);
@@ -187,7 +213,7 @@ html(lang="vi")
 
       function updateSummary() {
         document.getElementById('selectedCount').innerText = `${selectedSlots.length} ô (${selectedSlots.length * 30} phút)`;
-        
+       
         let totalPrice = 0;
         const blockMorningRate = priceMorning / 2;
         const blockEveningRate = priceEvening / 2;
@@ -204,22 +230,24 @@ html(lang="vi")
         document.getElementById('totalPrice').innerText = totalPrice.toLocaleString() + 'đ';
       }
 
-      // Lắng nghe sự kiện thay đổi ngày
       dateInput.addEventListener('change', fetchSlotsStatus);
 
-      // Gọi lần đầu khi load trang
-      fetchSlotsStatus();
-
-      // Xử lý submit đặt sân
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+       
         const token = localStorage.getItem('token');
         const alertBox = document.getElementById('alertBox');
 
         if (!token) {
           alert('Vui lòng đăng nhập tài khoản trước khi tiến hành đặt sân!');
           window.location.href = '/auth?mode=login';
+          return;
+        }
+
+        if (!selectedSubFieldId) {
+          alertBox.classList.remove('hidden');
+          alertBox.className = 'p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 border border-rose-200';
+          alertBox.innerText = 'Vui lòng chọn một sân cụ thể (Sân 1, Sân 2...) trước khi đặt!';
           return;
         }
 
@@ -233,6 +261,25 @@ html(lang="vi")
         const yardId = document.getElementById('yardId').value;
         const date = dateInput.value;
 
+        // === LỚP BẢO VỆ KÉP: KIỂM TRA LẠI LỊCH TRỐNG NGAY TRƯỚC KHI SUBMIT ===
+        try {
+          const checkRes = await fetch(`/api/bookings/slots?yardId=${yardId}&subFieldId=${selectedSubFieldId}&date=${date}`);
+          const checkData = await checkRes.json();
+          const latestBookedSlots = checkData.bookedSlots || [];
+
+          const hasConflict = selectedSlots.some(slot => latestBookedSlots.includes(slot));
+          if (hasConflict) {
+            alertBox.classList.remove('hidden');
+            alertBox.className = 'p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-600 border border-rose-200';
+            alertBox.innerText = 'Rất tiếc! Một số khung giờ bạn vừa chọn đã có người khác đặt trước. Vui lòng chọn khung giờ khác.';
+            renderSlotsGrid(latestBookedSlots); // Cập nhật lại lưới để khóa ô bị chiếm
+            return;
+          }
+        } catch (err) {
+          console.error("Lỗi kiểm tra xung đột:", err);
+        }
+        // =================================================================
+
         try {
           const response = await fetch('/api/bookings', {
             method: 'POST',
@@ -240,7 +287,12 @@ html(lang="vi")
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ yardId, date, slots: selectedSlots })
+            body: JSON.stringify({ 
+              yardId, 
+              subFieldId: selectedSubFieldId, 
+              date, 
+              slots: selectedSlots 
+            })
           });
 
           const result = await response.json();
