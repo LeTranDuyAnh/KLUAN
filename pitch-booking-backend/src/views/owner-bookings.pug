@@ -14,13 +14,13 @@ html(lang="vi")
       div(class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4")
         div
           h1(class="text-2xl font-black text-gray-900 tracking-tight") Quản Lý Đơn Đặt Sân
-          p(class="text-sm text-gray-500 mt-1") Theo dõi và duyệt các yêu cầu đặt sân từ khách hàng.
+          p(class="text-sm text-gray-500 mt-1") Theo dõi và cập nhật trạng thái thanh toán các đơn đặt sân từ khách hàng.
 
-        //- Bộ lọc tab trạng thái
+        //- Bộ lọc tab trạng thái (Đã cập nhật theo 'chưa thanh toán' và 'đã thanh toán')
         div(class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm")
           button(onclick="filterBookings('all')" id="tab-all" class="px-4 py-2 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm") Tất cả
-          button(onclick="filterBookings('pending')" id="tab-pending" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Chờ duyệt
-          button(onclick="filterBookings('confirmed')" id="tab-confirmed" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã xác nhận
+          button(onclick="filterBookings('chưa thanh toán')" id="tab-chưa thanh toán" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Chưa thanh toán
+          button(onclick="filterBookings('đã thanh toán')" id="tab-đã thanh toán" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã thanh toán
           button(onclick="filterBookings('cancelled')" id="tab-cancelled" class="px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100") Đã hủy
 
       //- Bảng danh sách đơn đặt sân
@@ -85,23 +85,23 @@ html(lang="vi")
 
         tbody.innerHTML = filtered.map(b => {
           let statusBadge = '';
-          if (b.status === 'pending') {
-            statusBadge = `<span class="bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full">Chờ duyệt</span>`;
-          } else if (b.status === 'confirmed') {
-            statusBadge = `<span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-full">Đã xác nhận</span>`;
+          if (b.status === 'chưa thanh toán') {
+            statusBadge = `<span class="bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-1 rounded-full">Chưa thanh toán</span>`;
+          } else if (b.status === 'đã thanh toán') {
+            statusBadge = `<span class="bg-emerald-100 text-emerald-700 font-bold text-xs px-2.5 py-1 rounded-full">Đã thanh toán</span>`;
           } else {
             statusBadge = `<span class="bg-rose-100 text-rose-700 font-bold text-xs px-2.5 py-1 rounded-full">Đã hủy</span>`;
           }
 
           let actions = '';
-          if (b.status === 'pending') {
+          if (b.status === 'chưa thanh toán') {
             actions = `
               <div class="flex items-center justify-center gap-2">
-                <button onclick="updateStatus('${b._id}', 'confirmed')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm">
-                  <i class="fas fa-check mr-1"></i> Duyệt
+                <button onclick="updateStatus('${b._id}', 'đã thanh toán')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm">
+                  <i class="fas fa-check mr-1"></i> Xác nhận thanh toán
                 </button>
                 <button onclick="updateStatus('${b._id}', 'cancelled')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-xl font-bold text-xs transition-all">
-                  <i class="fas fa-times mr-1"></i> Từ chối
+                  <i class="fas fa-times mr-1"></i> Hủy đơn
                 </button>
               </div>
             `;
@@ -141,19 +141,22 @@ html(lang="vi")
 
       function filterBookings(status) {
         currentFilter = status;
-        ['all', 'pending', 'confirmed', 'cancelled'].forEach(s => {
+        // Đồng bộ danh sách ID các tab cho chuẩn xác
+        ['all', 'chưa thanh toán', 'đã thanh toán', 'cancelled'].forEach(s => {
           const btn = document.getElementById(`tab-${s}`);
-          if (s === status) {
-            btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm";
-          } else {
-            btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100";
+          if (btn) {
+            if (s === status) {
+              btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-sm";
+            } else {
+              btn.className = "px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-600 hover:bg-gray-100";
+            }
           }
         });
         renderBookings(allBookings);
       }
 
       async function updateStatus(bookingId, newStatus) {
-        const actionText = newStatus === 'confirmed' ? 'duyệt' : 'từ chối';
+        const actionText = newStatus === 'đã thanh toán' ? 'xác nhận thanh toán' : 'hủy';
         if (!confirm(`Bạn có chắc chắn muốn ${actionText} đơn đặt sân này không?`)) return;
 
         try {
@@ -169,7 +172,7 @@ html(lang="vi")
           const result = await response.json();
 
           if (result.success) {
-            alert(`Đã ${actionText} đơn thành công!`);
+            alert(`Cập nhật trạng thái đơn thành công!`);
             fetchBookings();
           } else {
             alert(result.error || 'Có lỗi xảy ra khi cập nhật trạng thái.');
