@@ -39,7 +39,7 @@ async function customerRoutes(fastify, options) {
     }
   });
 
-  // 3. API khách hàng hủy lịch đặt (chỉ khi ở trạng thái pending)
+  // 3. API khách hàng hủy lịch đặt (chỉ khi chưa thanh toán)
   fastify.patch('/api/customer/bookings/:id/cancel', { preHandler: verifyToken }, async (request, reply) => {
     try {
       const bookingId = request.params.id;
@@ -50,8 +50,9 @@ async function customerRoutes(fastify, options) {
         return reply.code(404).send({ success: false, error: 'Không tìm thấy lịch đặt sân!' });
       }
 
-      if (booking.status !== 'pending') {
-        return reply.code(400).send({ success: false, error: 'Chỉ có thể hủy lịch khi đang chờ duyệt (pending)!' });
+      // Sửa từ 'pending' thành 'chưa thanh toán' cho khớp với lúc tạo đơn
+      if (booking.status !== 'chưa thanh toán') {
+        return reply.code(400).send({ success: false, error: 'Chỉ có thể hủy lịch khi đơn hàng ở trạng thái chưa thanh toán!' });
       }
 
       booking.status = 'cancelled';

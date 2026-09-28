@@ -11,6 +11,9 @@ const bookingSchema = new mongoose.Schema({
   slots: { type: [String], default: [] },       // <-- Thêm trường này để lưu mảng các slot chi tiết
   totalPrice: { type: Number, required: true },
   status: { type: String, default: 'pending' }, 
+  // Bổ sung vào bookingSchema:
+  voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher', default: null },
+  //discountAmount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);

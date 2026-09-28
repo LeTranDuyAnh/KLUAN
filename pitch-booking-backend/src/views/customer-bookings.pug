@@ -31,41 +31,53 @@ html(lang="vi")
           i(class="fas fa-spinner fa-spin text-3xl text-emerald-600 mb-3")
           p(class="text-sm text-gray-400 font-medium") Đang tải danh sách lịch đặt...
 
-    //- Modal Thanh Toán QR
+    //- Modal Thanh Toán QR & Chọn/Nhập Voucher
     div#paymentModal(class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4")
-      div(class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4")
+      div(class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto")
         div(class="flex items-center justify-between border-b border-gray-100 pb-3")
           h3(class="font-black text-lg text-gray-900 flex items-center gap-2")
             i(class="fas fa-qrcode text-emerald-600")
-            | Quét Mã QR Thanh Toán
+            | Thanh Toán & Áp Mã Giảm Giá
           button(onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg") &times;
 
-        div(class="text-center space-y-3")
-          p(class="text-xs text-gray-500") Sử dụng ứng dụng Ngân hàng hoặc Ví điện tử để quét mã QR dưới đây:
-          
-          div(class="inline-block p-3 bg-white border-2 border-emerald-500 rounded-2xl shadow-inner")
-            img#qrCodeImg(src="" alt="QR Code" class="w-48 h-48 mx-auto object-contain")
+        div(class="space-y-3")
+          //- Phần nhập hoặc chọn Voucher kết hợp
+          div(class="space-y-2 bg-gray-50 p-3 rounded-2xl border border-gray-200")
+            label(class="block text-xs font-bold text-gray-700 uppercase") Mã giảm giá (Voucher)
+            
+            div(class="flex gap-2")
+              input(type="text" id="voucherCodeInput" placeholder="Nhập mã (VD: GIAM50K)..." class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500")
+              button(type="button" onclick="applyVoucherByCode()" class="px-3.5 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm") Áp dụng
 
-          div(class="bg-gray-50 p-3 rounded-2xl text-xs space-y-1.5 text-left border border-gray-200")
-            div(class="flex justify-between")
-              span(class="text-gray-500") Ngân hàng:
-              span(class="font-bold text-gray-900") MB Bank (Quân Đội)
-            div(class="flex justify-between")
-              span(class="text-gray-500") Số tài khoản:
-              span(class="font-bold text-emerald-600") 0398102869
-            div(class="flex justify-between")
-              span(class="text-gray-500") Chủ tài khoản:
-              span(class="font-bold text-gray-900") Lê Trần Duy Anh
-            div(class="flex justify-between")
-              span(class="text-gray-500") Số tiền:
-              span(class="font-black text-rose-600" id="modalPrice") 0đ
-            div(class="flex justify-between")
-              span(class="text-gray-500") Nội dung chuyển khoản:
-              span(class="font-mono font-bold text-indigo-600" id="modalContent") SPORTHUB...
+            div(class="text-[11px] text-gray-400 text-center font-medium my-1") --- HOẶC CHỌN TỪ VÍ ---
+
+            select(id="userVoucherSelect" onchange="onVoucherSelectChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500")
+              option(value="") -- Chọn mã giảm giá từ ví của bạn --
+
+            div#voucherMsg(class="text-[11px] font-bold mt-1 hidden")
+
+          //- Thông tin QR & Số tiền
+          div(class="text-center space-y-2 pt-2")
+            div(class="inline-block p-2 bg-white border-2 border-emerald-500 rounded-2xl shadow-inner")
+              img#qrCodeImg(src="" alt="QR Code" class="w-40 h-40 mx-auto object-contain")
+
+            div(class="bg-gray-50 p-3 rounded-2xl text-xs space-y-1.5 text-left border border-gray-200")
+              div(class="flex justify-between")
+                span(class="text-gray-500") Tổng tiền gốc:
+                span(class="font-bold text-gray-900" id="originalPriceDisplay") 0đ
+              div(class="flex justify-between")
+                span(class="text-gray-500") Giảm giá:
+                span(class="font-bold text-rose-600" id="discountDisplay") -0đ
+              div(class="flex justify-between border-t border-gray-200 pt-1.5")
+                span(class="text-gray-700 font-bold") Thực thanh toán:
+                span(class="font-black text-emerald-600 text-sm" id="modalPrice") 0đ
+              div(class="flex justify-between")
+                span(class="text-gray-500") Nội dung CK:
+                span(class="font-mono font-bold text-indigo-600" id="modalContent") SPORTHUB...
 
           p(class="text-[11px] text-amber-600 bg-amber-50 p-2 rounded-xl border border-amber-200")
             i(class="fas fa-info-circle mr-1")
-            | Vui lòng giữ nguyên nội dung chuyển khoản để hệ thống tự động xác nhận!
+            | Chuyển khoản đúng số tiền thực thanh toán và nội dung để hệ thống tự động xác nhận!
 
         div(class="flex gap-3 pt-2")
           button(onclick="closePaymentModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all") Đóng
@@ -73,8 +85,12 @@ html(lang="vi")
 
     script.
       let allBookings = [];
+      let myVouchers = [];
       let currentFilter = 'all';
       let activeBookingId = null;
+      let activeBookingOriginalPrice = 0;
+      let currentAppliedVoucherId = null;
+      let currentDiscountAmount = 0;
 
       document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
@@ -85,12 +101,19 @@ html(lang="vi")
         }
 
         try {
-          const res = await fetch('/api/customer/bookings', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
+          const [resBookings, resVouchers] = await Promise.all([
+            fetch('/api/customer/bookings', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('/api/customer/vouchers', { headers: { 'Authorization': `Bearer ${token}` } })
+          ]);
 
-          if (!data.success || !data.bookings || data.bookings.length === 0) {
+          const dataBookings = await resBookings.json();
+          const dataVouchers = await resVouchers.json();
+
+          if (dataVouchers.success) {
+            myVouchers = dataVouchers.vouchers || [];
+          }
+
+          if (!dataBookings.success || !dataBookings.bookings || dataBookings.bookings.length === 0) {
             document.getElementById('bookingListContainer').innerHTML = `
               <div class="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
                 <i class="fas fa-calendar-times text-4xl text-gray-300 mb-3"></i>
@@ -100,7 +123,7 @@ html(lang="vi")
             return;
           }
 
-          allBookings = data.bookings;
+          allBookings = dataBookings.bookings;
           renderBookings();
         } catch (err) {
           console.error(err);
@@ -125,7 +148,6 @@ html(lang="vi")
 
       function renderBookings() {
         const container = document.getElementById('bookingListContainer');
-        
         const filtered = allBookings.filter(item => {
           if (currentFilter === 'all') return true;
           return item.status === currentFilter;
@@ -150,7 +172,6 @@ html(lang="vi")
 
         container.innerHTML = sortedDates.map(date => {
           const bookingsOnDate = groupedByDate[date];
-          
           const cardsHtml = bookingsOnDate.map(item => {
             const yard = item.yard || {};
             let statusBadge = '';
@@ -163,35 +184,16 @@ html(lang="vi")
               statusBadge = '<span class="bg-rose-50 text-rose-600 border border-rose-200/60 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">Đã hủy</span>';
             }
 
-            // --- XỬ LÝ HIỂN THỊ CHIA THEO TỪNG CA CHƠI ---
             let slotsHtml = '';
-            
-            // Trường hợp 1: Dữ liệu chứa danh sách các ca/khoảng thời gian riêng biệt (Ví dụ: item.sessions hoặc item.timeSlots)
-            let sessions = item.sessions || item.timeSlots || item.shiftList;
-            
-            if (!sessions && item.slots && Array.isArray(item.slots) && item.slots.length > 0) {
-              // Nếu DB lưu mảng slots rời rạc, tự gom nhóm thành các ca liền mạch hoặc tách rời
-              sessions = formatGroupedSlots(item.slots);
-            }
-
+            let sessions = item.slots;
             if (sessions && Array.isArray(sessions) && sessions.length > 0) {
-              slotsHtml = sessions.map((sess, idx) => {
-                const timeText = typeof sess === 'string' ? sess : `${sess.startTime} - ${sess.endTime}`;
-                return `
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 mr-1.5 mb-1">
-                    <i class="far fa-clock mr-1 text-[10px]"></i> Ca ${idx + 1}: ${timeText}
-                  </span>
-                `;
-              }).join('');
-            } else if (item.startTime && item.endTime) {
-              // Trường hợp đơn chỉ có 1 khoảng startTime - endTime tổng, hiển thị làm Ca 1
-              slotsHtml = `
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  <i class="far fa-clock mr-1 text-[10px]"></i> Ca 1: ${item.startTime} - ${item.endTime}
+              slotsHtml = sessions.map((slot, idx) => `
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mr-1 mb-1">
+                  ${slot}
                 </span>
-              `;
+              `).join('');
             } else {
-              slotsHtml = `<span class="text-xs text-gray-700 font-semibold">Đang cập nhật giờ</span>`;
+              slotsHtml = `<span class="text-xs text-gray-700 font-semibold">${item.startTime} - ${item.endTime}</span>`;
             }
 
             const priceVal = item.totalPrice || 0;
@@ -214,20 +216,20 @@ html(lang="vi")
             return `
               <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                  <img src="${yard.image || yard.imageUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover flex-shrink-0 bg-gray-100" alt="Sân">
+                  <img src="${yard.image || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=300&auto=format&fit=crop'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover flex-shrink-0 bg-gray-100" alt="Sân">
                   <div>
                     <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md uppercase tracking-wider">${yard.type || 'Thể thao'}</span>
                       <span class="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <i class="fas fa-futbol text-[9px]"></i> ${item.subFieldName || 'Sân tiêu chuẩn'}
+                        <i class="fas fa-futbol text-[9px]"></i> ${item.subFieldName || 'Sân con'}
                       </span>
                       ${statusBadge}
                     </div>
                     <h3 class="font-bold text-gray-900 text-base leading-snug">${yard.name || 'Sân bóng'}</h3>
-                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-map-marker-alt text-emerald-500 mr-1.5"></i>${yard.location || yard.address || 'Đang cập nhật địa chỉ'}</p>
+                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-map-marker-alt text-emerald-500 mr-1.5"></i>${yard.location || 'Đang cập nhật địa chỉ'}</p>
                     
                     <div class="mt-2.5 flex flex-wrap items-center">
-                      <span class="text-xs text-gray-400 font-bold mr-1 mb-1">Các ca chơi:</span>
+                      <span class="text-xs text-gray-400 font-bold mr-1 mb-1">Khung giờ:</span>
                       <div class="flex flex-wrap gap-1">${slotsHtml}</div>
                     </div>
                   </div>
@@ -236,9 +238,8 @@ html(lang="vi")
                 <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 gap-3">
                   <div class="text-left sm:text-right">
                     <span class="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Tổng tiền</span>
-                    <span class="text-emerald-600 font-black text-base">${item.totalPrice ? item.totalPrice.toLocaleString('vi-VN') + 'đ' : 'Liên hệ'}</span>
+                    <span class="text-emerald-600 font-black text-base">${item.totalPrice ? item.totalPrice.toLocaleString('vi-VN') + 'đ' : '0đ'}</span>
                   </div>
-                  
                   ${actionButtons}
                 </div>
               </div>
@@ -251,61 +252,121 @@ html(lang="vi")
                 <div class="w-2 h-2 rounded-full bg-emerald-600"></div>
                 <h2 class="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Ngày: ${date}</h2>
               </div>
-              <div class="space-y-3">
-                ${cardsHtml}
-              </div>
+              <div class="space-y-3">${cardsHtml}</div>
             </div>
           `;
         }).join('');
       }
 
-      // Hàm phụ trợ tách/gộp nhóm slot liên tiếp nếu dữ liệu lưu dạng mảng slot 30 phút
-      function timeToMinutes(timeStr) {
-        if (!timeStr || !timeStr.includes(':')) return 0;
-        const [h, m] = timeStr.split(':').map(Number);
-        return h * 60 + m;
-      }
-
-      function minutesToTime(totalMinutes) {
-        const h = Math.floor(totalMinutes / 60) % 24;
-        const m = totalMinutes % 60;
-        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      }
-
-      function formatGroupedSlots(slots) {
-        if (!slots || !Array.isArray(slots) || slots.length === 0) return [];
-        const sorted = [...slots].sort();
-        const ranges = [];
-        let startSlot = sorted[0];
-        let prevMinutes = timeToMinutes(startSlot);
-        let currentEndMinutes = prevMinutes + 30;
-
-        for (let i = 1; i < sorted.length; i++) {
-          const slotMinutes = timeToMinutes(sorted[i]);
-          if (slotMinutes === currentEndMinutes) {
-            currentEndMinutes = slotMinutes + 30;
-          } else {
-            ranges.push(`${minutesToTime(timeToMinutes(startSlot))} - ${minutesToTime(currentEndMinutes)}`);
-            startSlot = sorted[i];
-            prevMinutes = slotMinutes;
-            currentEndMinutes = prevMinutes + 30;
-          }
-        }
-        ranges.push(`${minutesToTime(timeToMinutes(startSlot))} - ${minutesToTime(currentEndMinutes)}`);
-        return ranges;
-      }
-
       function openPaymentModal(bookingId, price, transferContent) {
         activeBookingId = bookingId;
-        document.getElementById('modalPrice').innerText = Number(price).toLocaleString('vi-VN') + 'đ';
+        activeBookingOriginalPrice = price;
+        currentAppliedVoucherId = null;
+        currentDiscountAmount = 0;
+
+        document.getElementById('voucherCodeInput').value = '';
+        const msgBox = document.getElementById('voucherMsg');
+        msgBox.classList.add('hidden');
+
+        const selectEl = document.getElementById('userVoucherSelect');
+        let optionsHtml = '<option value="">-- Chọn mã giảm giá từ ví của bạn --</option>';
+        
+        myVouchers.forEach(uv => {
+          if (uv.voucherId && !uv.isUsed) {
+            const v = uv.voucherId;
+            optionsHtml += `<option value="${uv._id}" data-code="${v.code}" data-discount="${v.discountValue}">Mã: ${v.code} (-${Number(v.discountValue).toLocaleString('vi-VN')}đ)</option>`;
+          }
+        });
+        selectEl.innerHTML = optionsHtml;
+
+        updateModalPrices(price, 0, transferContent);
+        document.getElementById('paymentModal').classList.remove('hidden');
+      }
+
+      function onVoucherSelectChange() {
+        const selectEl = document.getElementById('userVoucherSelect');
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        const msgBox = document.getElementById('voucherMsg');
+        const transferContent = 'DH' + String(activeBookingId).slice(-6).toUpperCase();
+
+        if (!selectedOption || !selectedOption.value) {
+          currentAppliedVoucherId = null;
+          currentDiscountAmount = 0;
+          document.getElementById('voucherCodeInput').value = '';
+          msgBox.classList.add('hidden');
+          updateModalPrices(activeBookingOriginalPrice, 0, transferContent);
+          return;
+        }
+
+        const code = selectedOption.getAttribute('data-code');
+        document.getElementById('voucherCodeInput').value = code;
+
+        currentDiscountAmount = Number(selectedOption.getAttribute('data-discount')) || 0;
+        currentAppliedVoucherId = selectedOption.value;
+
+        if (currentDiscountAmount > activeBookingOriginalPrice) {
+          currentDiscountAmount = activeBookingOriginalPrice;
+        }
+
+        msgBox.className = 'text-[11px] font-bold mt-1 text-emerald-600';
+        msgBox.innerText = `Đã áp dụng mã ${code} thành công!`;
+        msgBox.classList.remove('hidden');
+
+        updateModalPrices(activeBookingOriginalPrice, currentDiscountAmount, transferContent);
+      }
+
+      async function applyVoucherByCode() {
+        const codeInput = document.getElementById('voucherCodeInput').value.trim().toUpperCase();
+        const msgBox = document.getElementById('voucherMsg');
+        const transferContent = 'DH' + String(activeBookingId).slice(-6).toUpperCase();
+
+        if (!codeInput) {
+          msgBox.className = 'text-[11px] font-bold mt-1 text-rose-600';
+          msgBox.innerText = 'Vui lòng nhập mã giảm giá!';
+          msgBox.classList.remove('hidden');
+          return;
+        }
+
+        const found = myVouchers.find(uv => uv.voucherId && uv.voucherId.code === codeInput && !uv.isUsed);
+
+        if (!found) {
+          msgBox.className = 'text-[11px] font-bold mt-1 text-rose-600';
+          msgBox.innerText = 'Mã giảm giá không tồn tại hoặc không có trong ví của bạn!';
+          msgBox.classList.remove('hidden');
+          currentAppliedVoucherId = null;
+          currentDiscountAmount = 0;
+          updateModalPrices(activeBookingOriginalPrice, 0, transferContent);
+          return;
+        }
+
+        const selectEl = document.getElementById('userVoucherSelect');
+        selectEl.value = found._id;
+
+        currentAppliedVoucherId = found._id;
+        currentDiscountAmount = Number(found.voucherId.discountValue) || 0;
+
+        if (currentDiscountAmount > activeBookingOriginalPrice) {
+          currentDiscountAmount = activeBookingOriginalPrice;
+        }
+
+        msgBox.className = 'text-[11px] font-bold mt-1 text-emerald-600';
+        msgBox.innerText = `Áp dụng mã ${codeInput} thành công!`;
+        msgBox.classList.remove('hidden');
+
+        updateModalPrices(activeBookingOriginalPrice, currentDiscountAmount, transferContent);
+      }
+
+      function updateModalPrices(original, discount, transferContent) {
+        document.getElementById('originalPriceDisplay').innerText = original.toLocaleString('vi-VN') + 'đ';
+        document.getElementById('discountDisplay').innerText = '-' + discount.toLocaleString('vi-VN') + 'đ';
+        const finalPrice = original - discount;
+        document.getElementById('modalPrice').innerText = finalPrice.toLocaleString('vi-VN') + 'đ';
         document.getElementById('modalContent').innerText = transferContent;
 
         const bankId = 'MB';
         const accountNo = '0398102869';
-        const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${price}&addInfo=${transferContent}`;
-        
+        const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${finalPrice}&addInfo=${transferContent}`;
         document.getElementById('qrCodeImg').src = qrUrl;
-        document.getElementById('paymentModal').classList.remove('hidden');
       }
 
       function closePaymentModal() {
@@ -316,6 +377,7 @@ html(lang="vi")
       async function confirmPaid() {
         if (!activeBookingId) return;
         const token = localStorage.getItem('token');
+        const userVoucherId = currentAppliedVoucherId;
 
         try {
           const res = await fetch(`/api/customer/bookings/${activeBookingId}/pay`, {
@@ -324,12 +386,12 @@ html(lang="vi")
               'Content-Type': 'application/json',
               'Authorization': 'Bearer ' + token 
             },
-            body: JSON.stringify({})
+            body: JSON.stringify({ userVoucherId })
           });
           const result = await res.json();
 
           if (res.ok && result.success) {
-            alert('Thanh toán thành công! Sân đã được đặt và chuyển sang trạng thái đã thanh toán.');
+            alert('Thanh toán thành công! Trạng thái đơn đã chuyển sang đã thanh toán.');
             location.reload();
           } else {
             alert(result.error || 'Có lỗi xảy ra!');
@@ -341,7 +403,6 @@ html(lang="vi")
 
       async function cancelBooking(id) {
         if (!confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này không?')) return;
-        
         const token = localStorage.getItem('token');
         try {
           const res = await fetch(`/api/customer/bookings/${id}/cancel`, {

@@ -61,6 +61,11 @@ fastify.get('/owner/yards/new', async (request, reply) => {
     headerSubtitle: 'Tạo cụm sân và các sân con linh hoạt'
   });
 });
+// Thành như thế này (vì server.js và thư mục routes đều đang nằm trong src):
+const voucherRoutes = require('./routes/voucher.route');
+
+// Đăng ký vào Fastify:
+fastify.register(voucherRoutes);
 // Khởi chạy server
 const start = async () => {
   try {

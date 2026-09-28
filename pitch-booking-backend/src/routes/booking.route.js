@@ -2,6 +2,8 @@
 
 const Yard = require('../models/yard.model');
 const Booking = require('../models/booking.model');
+const UserVoucher = require('../models/user-voucher.model');
+const Voucher = require('../models/voucher.model');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -42,7 +44,6 @@ async function bookingRoutes(fastify, options) {
   // =========================================================
   fastify.get('/booking/:id', async (request, reply) => {
     try {
-
       const yardId = request.params.id;
 
       const yard = await Yard
@@ -61,9 +62,7 @@ async function bookingRoutes(fastify, options) {
       });
 
     } catch (error) {
-
       request.log.error(error);
-
       return reply
         .code(500)
         .send('Lỗi hệ thống khi tải trang chi tiết sân');
@@ -75,9 +74,7 @@ async function bookingRoutes(fastify, options) {
   // 2. GET API: Lấy các khung giờ 30 phút đã được đặt của MỘT SÂN CON trong một ngày
   // =========================================================
   fastify.get('/api/bookings/slots', async (request, reply) => {
-
     try {
-
       const {
         yardId,
         subFieldId,
@@ -113,22 +110,22 @@ async function bookingRoutes(fastify, options) {
       let bookedSlots = [];
 
       existingBookings.forEach(booking => {
-        if (!booking.startTime || !booking.endTime) {
-          return;
-        }
+        if (booking.slots && Array.isArray(booking.slots) && booking.slots.length > 0) {
+          bookedSlots.push(...booking.slots);
+        } else if (booking.startTime && booking.endTime) {
+          const [startHour, startMinute] = booking.startTime.split(':').map(Number);
+          const [endHour, endMinute] = booking.endTime.split(':').map(Number);
 
-        const [startHour, startMinute] = booking.startTime.split(':').map(Number);
-        const [endHour, endMinute] = booking.endTime.split(':').map(Number);
+          let currentMinutes = startHour * 60 + startMinute;
+          const endMinutes = endHour * 60 + endMinute;
 
-        let currentMinutes = startHour * 60 + startMinute;
-        const endMinutes = endHour * 60 + endMinute;
+          while (currentMinutes < endMinutes) {
+            const hour = String(Math.floor(currentMinutes / 60) % 24).padStart(2, '0');
+            const minute = String(currentMinutes % 60).padStart(2, '0');
 
-        while (currentMinutes < endMinutes) {
-          const hour = String(Math.floor(currentMinutes / 60) % 24).padStart(2, '0');
-          const minute = String(currentMinutes % 60).padStart(2, '0');
-
-          bookedSlots.push(`${hour}:${minute}`);
-          currentMinutes += 30;
+            bookedSlots.push(`${hour}:${minute}`);
+            currentMinutes += 30;
+          }
         }
       });
 
@@ -147,7 +144,6 @@ async function bookingRoutes(fastify, options) {
         error: 'Lỗi lấy thông tin lịch sân'
       });
     }
-
   });
 
 
@@ -160,7 +156,6 @@ async function bookingRoutes(fastify, options) {
       preHandler: verifyToken
     },
     async (request, reply) => {
-
       try {
         const {
           yardId,
@@ -267,7 +262,7 @@ async function bookingRoutes(fastify, options) {
           startTime,
           endTime,
           slots,
-          totalPrice,
+          totalPrice: totalPrice, 
           status: 'chưa thanh toán'
         });
 
@@ -284,7 +279,6 @@ async function bookingRoutes(fastify, options) {
           error: err.message
         });
       }
-
     }
   );
 
@@ -309,7 +303,7 @@ async function bookingRoutes(fastify, options) {
 
 
   // =========================================================
-  // 5. PUT API: Khách hàng xác nhận đã thanh toán online qua QR
+  // 5. PUT API: Khách hàng xác nhận thanh toán & Áp dụng / Khóa Voucher
   // =========================================================
   fastify.put(
     '/api/customer/bookings/:id/pay',
@@ -320,6 +314,7 @@ async function bookingRoutes(fastify, options) {
       try {
         const bookingId = request.params.id;
         const customerId = request.user.id || request.user._id || request.user.userId;
+        const { userVoucherId } = request.body;
 
         const booking = await Booking.findOne({
           _id: bookingId,
@@ -340,28 +335,59 @@ async function bookingRoutes(fastify, options) {
           });
         }
 
-        booking.status = 'confirm';
+        let discountAmount = 0;
+        let validVoucherId = null;
+
+        if (userVoucherId) {
+          const userVoucher = await UserVoucher.findOne({ 
+            _id: userVoucherId, 
+            userId: customerId, 
+            isUsed: false 
+          }).populate('voucherId');
+
+          if (!userVoucher || !userVoucher.voucherId) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Mã giảm giá trong ví không hợp lệ hoặc đã được sử dụng rồi!'
+            });
+          }
+
+          const voucher = userVoucher.voucherId;
+          discountAmount = voucher.discountValue;
+          if (discountAmount > booking.totalPrice) {
+            discountAmount = booking.totalPrice;
+          }
+
+          validVoucherId = voucher._id;
+
+          userVoucher.isUsed = true;
+          await userVoucher.save();
+
+          voucher.usedCount += 1;
+          await voucher.save();
+        }
+
+        booking.totalPrice = Math.max(0, booking.totalPrice - discountAmount);
+        booking.voucher = validVoucherId;
+        booking.discountAmount = discountAmount;
+        booking.status = 'đã thanh toán';
         await booking.save();
 
         return reply.send({
           success: true,
-          message: 'Thanh toán thành công! Trạng thái đơn đã tự động chuyển sang đã thanh toán.'
+          message: 'Thanh toán thành công và đã khóa mã giảm giá trong ví!'
         });
 
       } catch (err) {
         request.log.error(err);
         return reply.code(500).send({
           success: false,
-          error: 'Lỗi hệ thống khi xử lý thanh toán'
+          error: 'Lỗi hệ thống khi xử lý thanh toán: ' + err.message
         });
       }
     }
   );
 
-
-  // =========================================================
-  
-
-} // <-- Đóng hàm bookingRoutes chuẩn xác ở đây
+}
 
 module.exports = bookingRoutes;
