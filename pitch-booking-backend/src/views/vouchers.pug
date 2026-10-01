@@ -1,0 +1,171 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Kho Voucher - Đặt Sân Bóng
+    script(src="https://cdn.tailwindcss.com")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css")
+    script.
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              sportGreen: '#0F5132',
+              sportGreenHover: '#146c43',
+              sportBg: '#F8F9FA',
+              cardBorder: '#E2E8F0'
+            }
+          }
+        }
+      }
+  
+  body(class="bg-sportBg text-slate-800 font-sans antialiased")
+
+    include header
+
+    main(class="max-w-5xl mx-auto px-4 py-8")
+      div(class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4")
+        div
+          h1(class="text-2xl font-black text-slate-900 tracking-tight") 🎟️ Kho Mã Giảm Giá
+          p(class="text-sm text-slate-500 mt-1") Khám phá toàn bộ voucher có sẵn trong hệ thống và sử dụng cho đơn đặt sân của bạn.
+        
+        div(class="flex items-center gap-2 flex-wrap")
+          div(class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-cardBorder shadow-sm")
+            input(id="voucherCodeInput" type="text" placeholder="Nhập mã (VD: GIAM10K)" class="px-3 py-2 text-sm uppercase bg-transparent focus:outline-none font-semibold text-slate-700 w-40")
+            button(onclick="claimVoucher()" class="bg-sportGreen text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-sportGreenHover transition shadow-md")
+              i(class="fa-solid fa-plus me-1")
+              | Lưu mã
+          
+          a(href="/booking" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-3 rounded-2xl transition shadow-md flex items-center gap-1.5 no-underline")
+            i(class="fa-solid fa-futbol")
+            | Đi đến trang đặt sân
+
+      div(id="voucherList" class="grid grid-cols-1 md:grid-cols-2 gap-5")
+        div(class="col-span-2 text-center py-12 text-slate-400 bg-white rounded-2xl border border-cardBorder")
+          i(class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-sportGreen")
+          p(class="text-sm") Đang tải danh sách voucher...
+
+    script.
+      const TOKEN = localStorage.getItem('token') || '';
+
+      document.addEventListener('DOMContentLoaded', () => {
+          fetchAllVouchers();
+      });
+
+      async function fetchAllVouchers() {
+          const listContainer = document.getElementById('voucherList');
+          try {
+              const res = await fetch('/api/customer/vouchers', {
+                  headers: { 'Authorization': 'Bearer ' + TOKEN }
+              });
+              const data = await res.json();
+
+              if (!data.success || !data.vouchers || data.vouchers.length === 0) {
+                  listContainer.innerHTML = `
+                      <div class="col-span-2 text-center py-12 bg-white rounded-2xl border border-cardBorder shadow-sm">
+                          <i class="fa-solid fa-ticket-simple text-4xl text-slate-300 mb-3"></i>
+                          <p class="text-slate-600 font-medium">Chưa có mã giảm giá nào trong hệ thống.</p>
+                      </div>
+                  `;
+                  return;
+              }
+
+              let html = '';
+              data.vouchers.forEach(item => {
+                  const v = item.voucher;
+                  if (!v) return;
+
+                  let discountTitle = `GIẢM ${v.discountValue.toLocaleString('vi-VN')}đ`;
+                  let expiryDate = new Date(v.endDate).toLocaleDateString('vi-VN');
+                  let actionHtml = '';
+                  let statusBadge = '';
+                  let cardStyle = '';
+
+                  if (item.isUsed) {
+                      statusBadge = '<span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase"><i class="fa-solid fa-check-double me-1"></i>Đã sử dụng</span>';
+                      actionHtml = '<span class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-2 rounded-xl">Đã dùng</span>';
+                      cardStyle = 'opacity-60 bg-slate-50/50 grayscale-[30%]';
+                  } else {
+                      statusBadge = '<span class="bg-emerald-50 text-sportGreen text-[10px] font-bold px-2.5 py-1 rounded-md uppercase"><i class="fa-solid fa-bolt me-1"></i>Chưa dùng</span>';
+                      
+                      if (item.isClaimed) {
+                          actionHtml = `<a href="/booking" class="bg-sportGreen text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-sportGreenHover transition shadow-md shadow-sportGreen/20 no-underline inline-block">Sử dụng ngay</a>`;
+                      } else {
+                          actionHtml = `<button onclick="claimAndRedirect('${v.code}')" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-blue-700 transition shadow-md">Lưu & Dùng</button>`;
+                      }
+                      cardStyle = 'bg-white border-cardBorder hover:border-sportGreen/50 shadow-sm';
+                  }
+
+                  html += `
+                      <div class="border rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all ${cardStyle}">
+                          <div class="absolute left-0 top-0 bottom-0 w-2.5 ${item.isUsed ? 'bg-slate-300' : 'bg-sportGreen'}"></div>
+                          <div class="pl-2">
+                              <div class="flex justify-between items-start mb-3">
+                                  <div>
+                                      ${statusBadge}
+                                      <h3 class="text-xl font-black text-slate-900 mt-1">${discountTitle}</h3>
+                                  </div>
+                                  <span class="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">${v.code}</span>
+                              </div>
+                              <div class="space-y-1 text-xs text-slate-500 mb-4">
+                                  <p><i class="fa-solid fa-box-archive me-1.5 text-slate-400"></i>Đã dùng: ${v.usedCount} / ${v.quantity} lượt</p>
+                                  <p><i class="fa-regular fa-clock me-1.5 text-slate-400"></i>Hạn sử dụng: ${expiryDate}</p>
+                              </div>
+                          </div>
+                          <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                              <span class="text-[10px] text-slate-400 font-mono">ID: ${v._id}</span>
+                              ${actionHtml}
+                          </div>
+                      </div>
+                  `;
+              });
+              listContainer.innerHTML = html;
+          } catch (err) {
+              console.error(err);
+              listContainer.innerHTML = `<div class="col-span-2 text-center py-8 text-red-500 text-sm">Lỗi tải dữ liệu voucher.</div>`;
+          }
+      }
+
+      async function claimVoucher() {
+          const code = document.getElementById('voucherCodeInput').value.trim();
+          if (!code) return alert('Vui lòng nhập mã voucher!');
+
+          try {
+              const res = await fetch('/api/vouchers/claim', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+                  body: JSON.stringify({ code })
+              });
+              const data = await res.json();
+              if (data.success) {
+                  alert(data.message);
+                  document.getElementById('voucherCodeInput').value = '';
+                  fetchAllVouchers();
+              } else {
+                  alert(data.error);
+              }
+          } catch (err) {
+              console.error(err);
+              alert('Lỗi kết nối server');
+          }
+      }
+
+      async function claimAndRedirect(code) {
+          try {
+              const res = await fetch('/api/vouchers/claim', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+                  body: JSON.stringify({ code })
+              });
+              const data = await res.json();
+              if (data.success || (data.error && data.error.includes('đã lưu'))) {
+                  window.location.href = '/booking';
+              } else {
+                  alert(data.error);
+              }
+          } catch (err) {
+              console.error(err);
+              alert('Lỗi kết nối server');
+          }
+      }

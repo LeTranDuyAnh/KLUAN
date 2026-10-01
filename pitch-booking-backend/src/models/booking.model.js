@@ -12,7 +12,11 @@ const bookingSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
   status: { type: String, default: 'pending' }, 
   // Bổ sung vào bookingSchema:
-  voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher', default: null },
+  voucher: {
+  type: String,
+  ref: 'Voucher',
+  default: null
+}
   //discountAmount: { type: Number, default: 0 },
 }, { timestamps: true });
 

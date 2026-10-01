@@ -66,6 +66,11 @@ const voucherRoutes = require('./routes/voucher.route');
 
 // Đăng ký vào Fastify:
 fastify.register(voucherRoutes);
+
+fastify.get('/customer/vouchers', async (request, reply) => {
+  // Bạn có thể truyền các biến như activePage để header nhận diện trang đang chọn
+  return reply.view('vouchers', { activePage: 'vouchers' }); 
+});
 // Khởi chạy server
 const start = async () => {
   try {

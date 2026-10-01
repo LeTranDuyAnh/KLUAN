@@ -20,9 +20,9 @@ header(class="bg-white shadow-md sticky top-0 z-50")
         a(href="/booking" class=`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${activePage === 'booking' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'}`)
           i(class="fas fa-calendar-alt me-1.5")
           | Trang đặt sân
-        a(href="/vouchers" class=`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${activePage === 'voucher' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'}`)
+        a(href="/customer/vouchers" class=`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${activePage === 'vouchers' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'}`)
           i(class="fas fa-ticket-alt me-1.5")
-          | Voucher
+          | Ví Voucher
         a(href="/about" class=`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${activePage === 'about' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'}`)
           i(class="fas fa-info-circle me-1.5")
           | Thông tin
@@ -34,23 +34,20 @@ header(class="bg-white shadow-md sticky top-0 z-50")
       div(class="flex items-center")
         div#authContainer
 
-  //- Menu Mobile
-  div(class="md:hidden bg-white border-t border-gray-100 px-4 py-2 flex justify-around text-xs")
-    a(href="/" class=`py-1 ${activePage === 'home' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
+  //- Menu Mobile (Đã bổ sung nút Ví Voucher)
+  div(class="md:hidden bg-white border-t border-gray-100 px-2 py-2 flex justify-around text-xs")
+    a(href="/" class=`py-1 px-2 text-center ${activePage === 'home' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
       i(class="fas fa-home d-block text-center text-base mb-1")
       | Trang chủ
-    a(href="/booking" class=`py-1 ${activePage === 'booking' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
+    a(href="/booking" class=`py-1 px-2 text-center ${activePage === 'booking' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
       i(class="fas fa-calendar-alt d-block text-center text-base mb-1")
       | Đặt sân
-    a(href="/vouchers" class=`py-1 ${activePage === 'voucher' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
+    a(href="/customer/vouchers" class=`py-1 px-2 text-center ${activePage === 'vouchers' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
       i(class="fas fa-ticket-alt d-block text-center text-base mb-1")
       | Voucher
-    a(href="/about" class=`py-1 ${activePage === 'about' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
+    a(href="/about" class=`py-1 px-2 text-center ${activePage === 'about' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
       i(class="fas fa-info-circle d-block text-center text-base mb-1")
       | Thông tin
-    a(href="/map" class=`py-1 ${activePage === 'map' ? 'text-emerald-600 font-bold' : 'text-gray-600'}`)
-      i(class="fas fa-map-marked-alt d-block text-center text-base mb-1")
-      | Bản đồ
 
 //- 4. PHẦN BANNER SLIDER (5 Môn Thể Thao: Bóng đá, Bóng rổ, Tennis, Pickleball, Cầu lông)
 div(class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6")
@@ -80,7 +77,7 @@ div(class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6")
         h2(class="text-white text-2xl sm:text-4xl font-black tracking-tight") Sân Quần Vợt Tiêu Chuẩn Thi Đấu
         p(class="text-gray-200 text-sm sm:text-base mt-1") Không gian thoáng đãng, mặt sân cứng đạt chuẩn quốc tế cho mọi trận đấu.
 
-    //- Banner 4: Pickleball (Đã thay link mới trực tiếp)
+    //- Banner 4: Pickleball
     div(class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out")
       img(src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover" alt="Sân Pickleball")
       div(class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-6 sm:p-10")
@@ -88,7 +85,7 @@ div(class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6")
         h2(class="text-white text-2xl sm:text-4xl font-black tracking-tight") Cụm Sân Pickleball Hot Nhất Hiện Nay
         p(class="text-gray-200 text-sm sm:text-base mt-1") Thỏa sức đam mê bộ môn thể thao xu hướng với trang thiết bị hiện đại.
 
-    //- Banner 5: Cầu lông (Đã thay link mới trực tiếp)
+    //- Banner 5: Cầu lông
     div(class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out")
       img(src="https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover" alt="Sân Cầu Lông")
       div(class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-6 sm:p-10")
@@ -132,6 +129,7 @@ script.
           </button>
           <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2 mt-2 rounded-xl">
             <li><a class="dropdown-item py-2 px-3 text-sm" href="/profile"><i class="fas fa-user-circle me-2 text-emerald-600"></i>Hồ sơ cá nhân</a></li>
+            <li><a class="dropdown-item py-2 px-3 text-sm" href="/customer/vouchers"><i class="fas fa-ticket-alt me-2 text-emerald-600"></i>Ví Voucher của tôi</a></li>
             <li><a class="dropdown-item py-2 px-3 text-sm" href="/customer/my-bookings"><i class="fas fa-clipboard-list me-2 text-emerald-600"></i>Sân đã đặt</a></li>
             ${user.role === 'owner' ? '<li><a class="dropdown-item py-2 px-3 text-sm" href="/owner"><i class="fas fa-store me-2 text-emerald-600"></i>Quản lý sân của tôi</a></li>' : ''}
             <li><hr class="dropdown-divider my-1"></li>
@@ -209,7 +207,6 @@ script.
     slideInterval = setInterval(nextSlide, 5000);
   }
 
-  // Khởi chạy vòng lặp tự động chuyển slide sau 5s
   if (slides.length > 0) {
     slideInterval = setInterval(nextSlide, 5000);
   }
